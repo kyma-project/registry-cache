@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - core.kyma-project.io.kyma-project.io
+  resources:
+  - registrycacheconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.kyma-project.io.kyma-project.io
+  resources:
+  - registrycacheconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.kyma-project.io.kyma-project.io
+  resources:
+  - registrycacheconfigs/status
+  verbs:
+  - get
+  - patch
+  - update

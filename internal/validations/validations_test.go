@@ -267,7 +267,7 @@ func TestDoOnUpdate(t *testing.T) {
 	}
 }
 
-func validateResult(t *testing.T, expectedErrors field.ErrorList, actualErrors field.ErrorList) bool {
+func validateResult(t *testing.T, expectedErrors field.ErrorList, actualErrors field.ErrorList) {
 	require.Equal(t, len(expectedErrors), len(actualErrors))
 
 	for _, expectedErr := range expectedErrors {

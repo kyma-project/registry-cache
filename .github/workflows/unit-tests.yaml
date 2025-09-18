@@ -1,0 +1,58 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - .reuse
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - .reuse
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
+
+jobs:
+  controller-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "~1.25.0"
+
+      - name: Running Tests
+        run: |
+          go mod tidy
+          set -o pipefail
+          make test | tee test.log
+
+      - name: coveralls github action
+        uses: coverallsapp/github-action@v2.3.6
+        with:
+          format: golang
+          file: ./cover.out
+          fail-on-error: false
+
+      - name: Generate summary
+        if: success() || failure()
+        run: |
+          {
+            echo '## registry-cache unit-tests log'
+            echo "<details>"
+            echo "<summary>click to expand logs</summary>"
+            printf '\n```\n'
+            cat test.log
+            printf '\n```\n'
+            echo "</details>"
+          } >> $GITHUB_STEP_SUMMARY

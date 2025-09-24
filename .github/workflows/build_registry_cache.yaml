@@ -1,0 +1,83 @@
+name: Build image
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-*"
+    paths-ignore:
+      - .reuse
+      - hack/
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
+
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - .reuse
+      - hack/
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
+
+permissions:
+  id-token: write # This is required for requesting the JWT token
+  contents: read # This is required for actions/checkout
+
+jobs:
+  setup:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag || '' }}
+      # set to {tag}-experimental if tag is set, otherwise set to empty string
+      tag-experimental: ${{ steps.tag.outputs.tag && format('{0}-experimental', steps.tag.outputs.tag) || '' }}
+      latest: ${{ steps.latest.outputs.latest || '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - id: tag
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        run: echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+      - id: latest
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.event_name == 'push'
+        run: echo "latest=latest" >> $GITHUB_OUTPUT
+
+  build-image:
+    name: run-image-builder
+    needs: setup
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: registry-cache
+      dockerfile: Dockerfile
+      context: .
+      tags: |
+        ${{ needs.setup.outputs.tag }}
+        ${{ needs.setup.outputs.tag-experimental }}
+        ${{ needs.setup.outputs.latest }}
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [build-image]
+    if: success() || failure()
+    steps:
+      - name: "Generate summary"
+        run: |
+          {
+            echo '# registry-cache'
+            # if build-image was successful
+            if [ "${{ needs.build-image.result }}" == "success" ]; then
+              printf '\n\n## Image\n'
+              printf '\n```json\n'
+              echo '${{ needs.build-image.outputs.images }}' | jq
+              printf '\n```\n'
+            fi
+          } >> $GITHUB_STEP_SUMMARY

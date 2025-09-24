@@ -1,8 +1,11 @@
-apiVersion: v1
-kind: ServiceAccount
+apiVersion: cert-manager.io/v1
+kind: Issuer
 metadata:
   labels:
     app.kubernetes.io/name: registry-cache
     app.kubernetes.io/managed-by: kustomize
-  name: controller-manager
-  namespace: system
+  name: kyma
+  namespace: kyma-system
+spec:
+  selfSigned: {}
+

@@ -2,7 +2,7 @@ apiVersion: core.kyma-project.io.kyma-project.io/v1beta1
 kind: RegistryCacheConfig
 metadata:
   labels:
-    app.kubernetes.io/name: registry-cache-kubebuilder
+    app.kubernetes.io/name: registry-cache
     app.kubernetes.io/managed-by: kustomize
   name: registrycacheconfig-sample
 spec:

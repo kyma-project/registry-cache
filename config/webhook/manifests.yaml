@@ -10,12 +10,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-core-kyma-project-io-kyma-project-io-v1beta1-registrycacheconfig
+      path: /validate-core-kyma-project-io-v1beta1-registrycacheconfig
   failurePolicy: Fail
-  name: vregistrycacheconfig-v1beta1.kb.io
+  name: registrycacheconfig-v1beta1.kb.io
   rules:
   - apiGroups:
-    - core.kyma-project.io.kyma-project.io
+    - core.kyma-project.io
     apiVersions:
     - v1beta1
     operations:

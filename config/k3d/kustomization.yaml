@@ -1,16 +1,9 @@
 namespace: kyma-system
-namePrefix: registry-cache-ls
-
-
+namePrefix: registry-cache-
 patches:
 - path: manager_webhook_patch.yaml
-- patch: |-
-    - op: replace
-      path: /spec/template/spec/containers/0/imagePullPolicy
-      value: Never
-  target:
-    kind: Deployment
 resources:
+- ../crd
 - ../rbac
 - ../webhook
 - metrics_service.yaml

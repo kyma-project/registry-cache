@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,7 +44,7 @@ func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager) error {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
-// +kubebuilder:webhook:path=/validate-core-kyma-project-io-kyma-project-io-v1beta1-registrycacheconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.kyma-project.io.kyma-project.io,resources=registrycacheconfigs,verbs=create;update,versions=v1beta1,name=vregistrycacheconfig-v1beta1.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-core-kyma-project-io-v1beta1-registrycacheconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.kyma-project.io,resources=registrycacheconfigs,verbs=create;update,versions=v1beta1,name=registrycacheconfig-v1beta1.kb.io,admissionReviewVersions=v1
 
 // RegistryCacheConfigCustomValidator struct is responsible for validating the RegistryCacheConfig resource
 // when it is created, updated, or deleted.
@@ -66,11 +67,12 @@ func (v *RegistryCacheConfigCustomValidator) ValidateCreate(_ context.Context, o
 
 	// TODO(user): fill in your validation logic upon object creation.
 
-	return nil, nil
+	return nil, errors.New("not implemented temporarily")
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.
 func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+
 	registrycacheconfig, ok := newObj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
 	if !ok {
 		return nil, fmt.Errorf("expected a RegistryCacheConfig object for the newObj but got %T", newObj)
@@ -79,7 +81,7 @@ func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, o
 
 	// TODO(user): fill in your validation logic upon object update.
 
-	return nil, nil
+	return nil, errors.New("not implemented temporarily")
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.

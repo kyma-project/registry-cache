@@ -1,7 +1,16 @@
 namespace: kyma-system
+
 namePrefix: registry-cache-
+
 patches:
 - path: manager_webhook_patch.yaml
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --webhook-name=registry-cache-validating-webhook-configuration
+  target:
+    kind: Deployment
+
 resources:
 - ../crd
 - ../rbac

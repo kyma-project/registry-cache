@@ -151,7 +151,7 @@ func main() {
 				})
 
 			if err := retry.RetryOnConflict(retry.DefaultBackoff, updateCABundle); err != nil {
-				setupLog.Error(err, "unable to patch mutating webhook configuration")
+				setupLog.Error(err, "unable to patch validating webhook configuration")
 				os.Exit(1)
 			}
 		},

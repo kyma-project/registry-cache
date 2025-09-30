@@ -9,24 +9,14 @@ rules:
   resources:
   - registrycacheconfigs
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
-  - update
   - watch
 - apiGroups:
-  - core.kyma-project.io.kyma-project.io
+    - admissionregistration.k8s.io
   resources:
-  - registrycacheconfigs/finalizers
+    - validatingwebhookconfigurations
   verbs:
-  - update
-- apiGroups:
-  - core.kyma-project.io.kyma-project.io
-  resources:
-  - registrycacheconfigs/status
-  verbs:
-  - get
-  - patch
-  - update
+    - get
+    - patch

@@ -32,7 +32,7 @@ func BuildUpdateCABundle(
 		getCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
-		var validatingWebhook admissionregistration.MutatingWebhookConfiguration
+		var validatingWebhook admissionregistration.ValidatingWebhookConfiguration
 		if err := rtClient.Get(
 			getCtx,
 			client.ObjectKey{Name: opts.Name},

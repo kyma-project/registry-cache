@@ -43,6 +43,12 @@ patches:
 - path: manager_webhook_patch.yaml
   target:
     kind: Deployment
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --webhook-name=registry-cache-validating-webhook
+  target:
+    kind: Deployment
 # Uncomment the patches line if you enable Metrics and CertManager
 # [METRICS-WITH-CERTS] To enable metrics protected with certManager, uncomment the following line.
 # This patch will protect the metrics with certManager self-signed certs.

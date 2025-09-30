@@ -17,15 +17,22 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
+	"github.com/kyma-project/registry-cache/internal/webhook/certificate"
 	"github.com/kyma-project/registry-cache/internal/webhook/v1beta1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 	"os"
+	"path"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	webhook "github.com/kyma-project/registry-cache/internal/webhook/server"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -34,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	corekymaprojectiov1beta1 "github.com/kyma-project/registry-cache/api/v1beta1"
 	// +kubebuilder:scaffold:imports
@@ -48,8 +54,10 @@ var (
 const (
 	certDir                  = "/tmp/"
 	certificateAuthorityName = "ca.crt"
+	flagWebhookName          = "webhook-name"
 	webhookServerKeyName     = "tls.key"
 	webhookServerCertName    = "tls.crt"
+	patchFieldManagerName    = "registry-cache-webhook"
 )
 
 func init() {
@@ -62,13 +70,13 @@ func init() {
 // nolint:gocyclo
 func main() {
 	var metricsAddr string
-	var metricsCertPath, metricsCertName, metricsCertKey string
-	var webhookCertPath, webhookCertName, webhookCertKey string
 	var enableLeaderElection bool
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
 	var tlsOpts []func(*tls.Config)
+	var webhookName string
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -77,15 +85,10 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&secureMetrics, "metrics-secure", true,
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
-	flag.StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
-	flag.StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
-	flag.StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
-	flag.StringVar(&metricsCertPath, "metrics-cert-path", "",
-		"The directory that contains the metrics server certificate.")
-	flag.StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
-	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	flag.StringVar(&webhookName, flagWebhookName, "", "The name of the mutating webhook configuration to be updated.")
+
 	opts := zap.Options{
 		Development: true,
 	}
@@ -109,11 +112,49 @@ func main() {
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
 
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		setupLog.Error(err, "unable to create rest configuration")
+		os.Exit(1)
+	}
+
+	rtClient, err := client.New(config, client.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create client")
+		os.Exit(1)
+	}
+
 	webhookServer := webhook.NewServer(webhook.Options{
 		TLSOpts:  tlsOpts,
 		CertDir:  certDir,
 		KeyName:  webhookServerKeyName,
 		CertName: webhookServerCertName,
+		Callback: func(cert tls.Certificate) {
+			// read regenerated certificate
+			certPath := path.Join(certDir, certificateAuthorityName)
+			data, err := os.ReadFile(certPath)
+			if err != nil {
+				setupLog.Error(err, "unable to read certificate")
+				os.Exit(1)
+			}
+			setupLog.Info("certificate loaded")
+
+			updateCABundle := certificate.BuildUpdateCABundle(
+				context.Background(),
+				rtClient,
+				certificate.BuildUpdateCABundleOpts{
+					Name:         webhookName,
+					CABundle:     data,
+					FieldManager: patchFieldManagerName,
+				})
+
+			if err := retry.RetryOnConflict(retry.DefaultBackoff, updateCABundle); err != nil {
+				setupLog.Error(err, "unable to patch mutating webhook configuration")
+				os.Exit(1)
+			}
+		},
 	})
 
 	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.

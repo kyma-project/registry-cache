@@ -25,12 +25,12 @@ func testScheme(t *testing.T) *runtime.Scheme {
 	return scheme
 }
 
-func testMWhCfg(name string, caBundle []byte) admissionregistration.MutatingWebhookConfiguration {
-	return admissionregistration.MutatingWebhookConfiguration{
+func testMWhCfg(name string, caBundle []byte) admissionregistration.ValidatingWebhookConfiguration {
+	return admissionregistration.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Webhooks: []admissionregistration.MutatingWebhook{
+		Webhooks: []admissionregistration.ValidatingWebhook{
 			{
 				ClientConfig: admissionregistration.WebhookClientConfig{
 					CABundle: caBundle,
@@ -99,7 +99,7 @@ func Test_BuildUpdateCABundle(t *testing.T) {
 	assert.Equal(t, []byte("updated"), mWhCfg.Webhooks[0].ClientConfig.CABundle)
 }
 
-func buildPatchFake(c *admissionregistration.MutatingWebhookConfiguration) func(context.Context,
+func buildPatchFake(c *admissionregistration.ValidatingWebhookConfiguration) func(context.Context,
 	client.WithWatch,
 	client.Object,
 	client.Patch,
@@ -114,7 +114,7 @@ func buildPatchFake(c *admissionregistration.MutatingWebhookConfiguration) func(
 			return clnt.Patch(ctx, obj, patch, opts...)
 		}
 
-		mWhCfg, ok := obj.(*admissionregistration.MutatingWebhookConfiguration)
+		mWhCfg, ok := obj.(*admissionregistration.ValidatingWebhookConfiguration)
 		*c = *mWhCfg
 
 		if !ok {

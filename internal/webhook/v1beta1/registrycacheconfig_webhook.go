@@ -59,6 +59,7 @@ var _ webhook.CustomValidator = &RegistryCacheConfigCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.
 func (v *RegistryCacheConfigCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+
 	registrycacheconfig, ok := obj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
 	if !ok {
 		return nil, fmt.Errorf("expected a RegistryCacheConfig object but got %T", obj)

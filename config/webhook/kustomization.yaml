@@ -4,13 +4,3 @@ resources:
 
 configurations:
 - kustomizeconfig.yaml
-
-patches:
-  - patch: |-
-      - op: add
-        path: /webhooks/0/namespaceSelector
-        value:
-          matchLabels:
-            operator.kyma-project.io/managed-by: kyma
-    target:
-      kind: ValidatingWebhookConfiguration

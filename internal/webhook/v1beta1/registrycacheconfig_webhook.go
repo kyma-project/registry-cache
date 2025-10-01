@@ -41,7 +41,7 @@ func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validations.
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-core-kyma-project-io-v1beta1-registrycacheconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.kyma-project.io,resources=registrycacheconfigs,verbs=create;update,versions=v1beta1,name=registrycacheconfig-v1beta1.kb.io,admissionReviewVersions=v1

@@ -143,7 +143,6 @@ func (*DefaultServer) NeedLeaderElection() bool {
 }
 
 // Register marks the given webhook as being served at the given path.
-// It panics if two hooks are registered on the same path.
 func (s *DefaultServer) Register(path string, hook http.Handler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

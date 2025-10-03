@@ -7,6 +7,7 @@ metadata:
     control-plane: controller-manager
     app.kubernetes.io/name: registry-cache
     app.kubernetes.io/managed-by: kustomize
+    sidecar.istio.io/inject: "false"
 spec:
   selector:
     matchLabels:
@@ -20,6 +21,7 @@ spec:
       labels:
         control-plane: controller-manager
         app.kubernetes.io/name: registry-cache
+        sidecar.istio.io/inject: "false"
     spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.

@@ -49,6 +49,22 @@ patches:
       value: --webhook-name=registry-cache-validating-webhook
   target:
     kind: Deployment
+
+replacements:
+  - source:
+      kind: Deployment
+      fieldPath: metadata.namespace
+    targets:
+      - select:
+          name: kyma
+          kind: Certificate
+        fieldPaths:
+          - spec.issuerRef.namespace
+      - select:
+          name: kyma
+          kind: Certificate
+        fieldPaths:
+          - spec.secretRef.namespace
 # Uncomment the patches line if you enable Metrics and CertManager
 # [METRICS-WITH-CERTS] To enable metrics protected with certManager, uncomment the following line.
 # This patch will protect the metrics with certManager self-signed certs.

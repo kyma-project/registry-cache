@@ -46,7 +46,7 @@ patches:
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/args/-
-      value: --webhook-name=registry-cache-validating-webhook
+      value: --webhook-name=registry-cache-validating-webhook-configuration
   target:
     kind: Deployment
 

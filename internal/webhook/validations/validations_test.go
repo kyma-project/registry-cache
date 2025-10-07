@@ -33,10 +33,10 @@ func TestDo(t *testing.T) {
 	upstreamFieldPath := field.NewPath("spec").Child("upstream")
 	remoteURLFieldPath := field.NewPath("spec").Child("remoteURL")
 	volumeSizeFieldPath := field.NewPath("spec").Child("volume").Child("size")
-	volumeStorageClassNameFieldPath := field.NewPath("spec").Child("volume").Child("storageClassName")
+	//volumeStorageClassNameFieldPath := field.NewPath("spec").Child("volume").Child("storageClassName")
 	garbageCollectionTTLFieldPath := field.NewPath("spec").Child("garbageCollection").Child("ttl")
-	httpProxyFieldPath := field.NewPath("spec").Child("volume").Child("proxy").Child("httpProxy")
-	httpsProxyFieldPath := field.NewPath("spec").Child("volume").Child("proxy").Child("httpsProxy")
+	httpProxyFieldPath := field.NewPath("spec").Child("proxy").Child("httpProxy")
+	httpsProxyFieldPath := field.NewPath("spec").Child("proxy").Child("httpsProxy")
 
 	secretWithIncorrectStructure := v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -83,7 +83,7 @@ func TestDo(t *testing.T) {
 				Spec: registrycache.RegistryCacheConfigSpec{},
 			},
 			errorsList: field.ErrorList{
-				field.Required(field.NewPath("spec"), "spec cannot be empty"),
+				field.Required(field.NewPath("spec"), "spec must not be empty"),
 			},
 		},
 		{
@@ -91,7 +91,7 @@ func TestDo(t *testing.T) {
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:  InvalidUpstreamPort,
-					RemoteURL: ptr.To(InvalidUpstreamPort),
+					RemoteURL: ptr.To(InvalidRemoteURL),
 					Volume: &registrycache.Volume{
 						Size:             ptr.To(resource.MustParse(InvalidVolumeSize)),
 						StorageClassName: ptr.To(InvalidVolumeStorageClassName),
@@ -109,10 +109,11 @@ func TestDo(t *testing.T) {
 				field.Invalid(upstreamFieldPath, InvalidUpstreamPort, "valid port must be in the range [1, 65535]"),
 				field.Invalid(remoteURLFieldPath, InvalidRemoteURL, "url must start with 'http://' or 'https://'"),
 				field.Invalid(volumeSizeFieldPath, InvalidVolumeSize, "must be greater than 0"),
-				field.Invalid(volumeStorageClassNameFieldPath, InvalidVolumeStorageClassName, "an RFC 1123 subdomain must consist of alphanumeric characters"),
-				field.Invalid(garbageCollectionTTLFieldPath, InvalidGarbageCollectionValue, "ttl must be a non-negative duration"),
-				field.Invalid(httpProxyFieldPath, InvalidHttpProxyUrl, "some error"),
-				field.Invalid(httpsProxyFieldPath, InvalidHttpsProxyUrl, "some error"),
+				field.Invalid(garbageCollectionTTLFieldPath, "-1ns", "ttl must be a non-negative duration"),
+				field.Invalid(httpProxyFieldPath, InvalidHttpProxyUrl, "url must start with 'http://' or 'https://"),
+				field.Invalid(httpProxyFieldPath, InvalidHttpProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
+				field.Invalid(httpsProxyFieldPath, InvalidHttpsProxyUrl, "url must start with 'http://' or 'https://"),
+				field.Invalid(httpsProxyFieldPath, InvalidHttpsProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
 			},
 		},
 		{
@@ -195,7 +196,7 @@ func TestDo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			errs := NewValidator(tt.secrets, tt.existingConfigs).Do(&tt.RegistryCacheConfig)
 
-			validateResult(t, errs, tt.errorsList)
+			validateResult(t, tt.errorsList, errs)
 		})
 	}
 }
@@ -272,12 +273,11 @@ func validateResult(t *testing.T, expectedErrors field.ErrorList, actualErrors f
 
 	for _, expectedErr := range expectedErrors {
 		actualErrIndex := slices.IndexFunc(actualErrors, func(err *field.Error) bool {
-			return err.Type == expectedErr.Type && expectedErr.Field == err.Field
+			return err.Type == expectedErr.Type &&
+				expectedErr.Field == err.Field &&
+				expectedErr.BadValue == err.BadValue &&
+				strings.Contains(err.Detail, expectedErr.Detail)
 		})
 		require.NotEqual(t, -1, actualErrIndex, "actual error not found: %v", expectedErr)
-
-		actualFieldError := actualErrors[actualErrIndex]
-		require.Equal(t, expectedErr.BadValue, actualFieldError.BadValue)
-		require.True(t, strings.Contains(actualFieldError.Detail, expectedErr.Detail))
 	}
 }

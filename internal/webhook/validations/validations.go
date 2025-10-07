@@ -7,6 +7,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"strings"
 )
 
 type Validator struct {
@@ -22,9 +23,13 @@ func NewValidator(secrets []v1.Secret, existingConfigs []registrycache.RegistryC
 }
 
 func (v Validator) Do(newConfig *registrycache.RegistryCacheConfig) field.ErrorList {
+	if isEmptySpec(newConfig.Spec) {
+		return field.ErrorList{field.Required(field.NewPath("spec"), "spec must not be empty")}
+	}
+
 	objectToValidate := toExtensionConfig(*newConfig)
 
-	return registrycacheextvalidations.ValidateRegistryConfig(objectToValidate, field.NewPath("spec"))
+	return transformFieldErrors(registrycacheextvalidations.ValidateRegistryConfig(objectToValidate, field.NewPath("spec")))
 }
 
 func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheConfig) field.ErrorList {
@@ -72,4 +77,38 @@ func toExtensionCache(c registrycache.RegistryCacheConfigSpec) registrycacheext.
 	}
 
 	return ext
+}
+
+func isEmptySpec(s registrycache.RegistryCacheConfigSpec) bool {
+	return s.Upstream == "" &&
+		s.RemoteURL == nil &&
+		s.Volume == nil &&
+		s.GarbageCollection == nil &&
+		s.Proxy == nil &&
+		s.SecretReferenceName == nil &&
+		s.HTTP == nil
+}
+
+func transformFieldErrors(errs field.ErrorList) field.ErrorList {
+	var crdErrors field.ErrorList
+
+	for _, extensionError := range errs {
+		extensionError.Field = adjustPath(extensionError.Field)
+		crdErrors = append(crdErrors, extensionError)
+	}
+
+	return crdErrors
+}
+
+func adjustPath(extensionPath string) string {
+	parts := strings.Split(extensionPath, ".")
+
+	if len(parts) < 2 {
+		return extensionPath
+	}
+
+	// Get rid of the second part which is always "caches[0]". Please see this: https://github.com/gardener/gardener-extension-registry-cache/blob/75e59657a15811faafccfccfdc0e5930adfe622d/pkg/apis/registry/validation/validation.go#L40
+	partsExtracted := append(parts[:1], parts[2:]...)
+
+	return strings.Join(partsExtracted, ".")
 }

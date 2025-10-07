@@ -13,11 +13,11 @@ import (
 )
 
 type BuildUpdateCABundleOpts struct {
-	// Name of the the mutating webhook configuration to be updated
+	// Name of the validating webhook configuration to be updated
 	Name string
-	// CABundle the mutating webhook configuration webhooks will be updated with
+	// CABundle the validating webhook configuration webhooks will be updated with
 	CABundle []byte
-	// FiledManager the name of the filed manager for patch operation
+	// FieldManager the name of the filed manager for patch operation
 	FieldManager string
 }
 
@@ -29,15 +29,15 @@ func BuildUpdateCABundle(
 
 	logger := slog.Default()
 	return func() error {
-		getCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
+		getCtx, cancelGet := context.WithTimeout(ctx, 5*time.Second)
+		defer cancelGet()
 
 		var validatingWebhook admissionregistration.ValidatingWebhookConfiguration
 		if err := rtClient.Get(
 			getCtx,
 			client.ObjectKey{Name: opts.Name},
 			&validatingWebhook); err != nil {
-			return fmt.Errorf("unable to get mutating webhook configuration: %w", err)
+			return fmt.Errorf("unable to get validating webhook configuration: %w", err)
 		}
 
 		var updated bool
@@ -50,7 +50,7 @@ func BuildUpdateCABundle(
 		}
 
 		if !updated {
-			logger.Info("mutating webhook configuration up to date")
+			logger.Info("validating webhook configuration up to date")
 			return nil
 		}
 
@@ -58,8 +58,8 @@ func BuildUpdateCABundle(
 		validatingWebhook.APIVersion = "admissionregistration.k8s.io/v1"
 		validatingWebhook.ManagedFields = nil
 
-		patchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
+		patchCtx, cancelPatch := context.WithTimeout(ctx, 5*time.Second)
+		defer cancelPatch()
 
 		logger.Info("attempting to patch validating webhook configuration", "name", validatingWebhook.Name)
 

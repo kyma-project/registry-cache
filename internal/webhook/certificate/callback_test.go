@@ -53,7 +53,7 @@ func Test_BuildUpdateCABundle_get_error(t *testing.T) {
 		CABundle: []byte("updated"),
 	})()
 
-	assert.ErrorContains(t, err, "unable to get mutating webhook configuration")
+	assert.ErrorContains(t, err, "unable to get validating webhook configuration")
 }
 
 func Test_BuildUpdateCABundle_patch_error(t *testing.T) {

@@ -33,7 +33,6 @@ func TestDo(t *testing.T) {
 	upstreamFieldPath := field.NewPath("spec").Child("upstream")
 	remoteURLFieldPath := field.NewPath("spec").Child("remoteURL")
 	volumeSizeFieldPath := field.NewPath("spec").Child("volume").Child("size")
-	//volumeStorageClassNameFieldPath := field.NewPath("spec").Child("volume").Child("storageClassName")
 	garbageCollectionTTLFieldPath := field.NewPath("spec").Child("garbageCollection").Child("ttl")
 	httpProxyFieldPath := field.NewPath("spec").Child("proxy").Child("httpProxy")
 	httpsProxyFieldPath := field.NewPath("spec").Child("proxy").Child("httpsProxy")
@@ -55,7 +54,7 @@ func TestDo(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"user":     []byte("dXNlcg=="),
+			"username": []byte("dXNlcg=="),
 			"password": []byte("cGFzc3dvcmQ="),
 		},
 		Immutable: ptr.To(false),
@@ -131,9 +130,10 @@ func TestDo(t *testing.T) {
 				},
 			},
 			errorsList: field.ErrorList{
-				field.Invalid(field.NewPath("spec").Child("upstream"), "docker.io", "duplicated upstream"),
+				field.Duplicate(field.NewPath("spec").Child("upstream"), "docker.io"),
 			},
 		},
+		// TODO: consider remoteURL to be validated for resolvability
 		{
 			name: "upstream non-resolvable",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
@@ -149,7 +149,7 @@ func TestDo(t *testing.T) {
 				},
 			},
 			errorsList: field.ErrorList{
-				field.Invalid(field.NewPath("spec").Child("upstream"), "docker.io", "duplicated upstream"),
+				field.Invalid(field.NewPath("spec").Child("upstream"), "some.incorrect.repo.io", "upstream is not DNS resolvable"),
 			},
 		},
 		{
@@ -161,20 +161,26 @@ func TestDo(t *testing.T) {
 				},
 			},
 			errorsList: field.ErrorList{
-				field.NotFound(field.NewPath("spec").Child("secretReferenceName"), "non-existent-secret"),
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), "non-existent-secret", "secret does not exist"),
 			},
 		},
 		{
 			name:    "secret with incorrect structure",
 			secrets: []v1.Secret{secretWithIncorrectStructure},
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config-with-invalid-secret",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:            "docker.io",
 					SecretReferenceName: ptr.To(secretWithIncorrectStructure.Name),
 				},
 			},
 			errorsList: field.ErrorList{
-				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), secretWithIncorrectStructure.Name, "invalid secret reference"),
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), secretWithIncorrectStructure.Name, "two data entries"),
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"username\" data entry"),
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"password\" data entry"),
 			},
 		},
 		{
@@ -183,6 +189,10 @@ func TestDo(t *testing.T) {
 				mutableSecret,
 			},
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config-with-invalid-secret",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:            "docker.io",
 					SecretReferenceName: ptr.To(mutableSecret.Name),

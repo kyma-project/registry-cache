@@ -1,13 +1,19 @@
 package validations
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
 	registrycacheextvalidations "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry/validation"
 	registrycache "github.com/kyma-project/registry-cache/api/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"net"
+	"slices"
 	"strings"
+	"time"
 )
 
 type Validator struct {
@@ -29,7 +35,43 @@ func (v Validator) Do(newConfig *registrycache.RegistryCacheConfig) field.ErrorL
 
 	objectToValidate := toExtensionConfig(*newConfig)
 
-	return transformFieldErrors(registrycacheextvalidations.ValidateRegistryConfig(objectToValidate, field.NewPath("spec")))
+	gardenerValidations := transformFieldErrors(registrycacheextvalidations.ValidateRegistryConfig(objectToValidate, field.NewPath("spec")))
+
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, gardenerValidations...)
+
+	if newConfig.Spec.SecretReferenceName != nil {
+		secretIndex := slices.IndexFunc(v.secrets, func(secret v1.Secret) bool {
+			return secret.Name == *newConfig.Spec.SecretReferenceName && secret.Namespace == newConfig.Namespace
+		})
+
+		if secretIndex == -1 {
+			errMsg := fmt.Sprintf("referenced secret does not exist: %v", *newConfig.Spec.SecretReferenceName)
+
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName, errMsg))
+		} else {
+			secret := v.secrets[secretIndex]
+			secretErrors := registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)
+			if len(secretErrors) > 0 {
+				allErrs = append(allErrs, secretErrors...)
+			}
+		}
+	}
+
+	for _, existingConfig := range v.existingConfigs {
+		if existingConfig.Spec.Upstream == newConfig.Spec.Upstream {
+			appendedErr := field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream)
+			allErrs = append(allErrs, appendedErr)
+		}
+	}
+
+	resolvable, err := IsDNSResolvable(context.Background(), newConfig.Spec.Upstream)
+	if !resolvable && err == nil {
+		// TODO: handle case with errors (e.g. timeout)
+		nonResolvableErr := field.Invalid(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream, "upstream is not DNS resolvable")
+		allErrs = append(allErrs, nonResolvableErr)
+	}
+	return allErrs
 }
 
 func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheConfig) field.ErrorList {
@@ -111,4 +153,39 @@ func adjustPath(extensionPath string) string {
 	partsExtracted := append(parts[:1], parts[2:]...)
 
 	return strings.Join(partsExtracted, ".")
+}
+
+func IsDNSResolvable(ctx context.Context, hostname string) (bool, error) {
+	hostname = strings.TrimSpace(hostname)
+	if hostname == "" {
+		return false, errors.New("hostname is empty")
+	}
+	// Basic sanity: disallow spaces and schemes.
+	if strings.ContainsAny(hostname, " /:\\") {
+		return false, errors.New("hostname contains invalid characters")
+	}
+
+	// If caller did not set a deadline, apply a sane timeout.
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+	}
+
+	// Use the default resolver.
+	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", hostname)
+	if err != nil {
+		// Distinguish context errors (treat as hard errors) from NXDOMAIN etc.
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return false, err
+		}
+		// For DNS errors (e.g. NXDOMAIN), return not resolvable without propagating error.
+		var dnsErr *net.DNSError
+		if errors.As(err, &dnsErr) {
+			return false, nil
+		}
+		// Unknown error: return it.
+		return false, err
+	}
+	return len(ips) > 0, nil
 }

@@ -75,7 +75,19 @@ func (v Validator) Do(newConfig *registrycache.RegistryCacheConfig) field.ErrorL
 }
 
 func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheConfig) field.ErrorList {
-	return nil
+	if isEmptySpec(newConfig.Spec) {
+		return field.ErrorList{field.Required(field.NewPath("spec"), "spec must not be empty")}
+	}
+
+	oldConfigExt := toExtensionConfig(*oldConfig)
+	objectToValidate := toExtensionConfig(*newConfig)
+
+	gardenerValidations := transformFieldErrors(registrycacheextvalidations.ValidateRegistryConfigUpdate(oldConfigExt, objectToValidate, field.NewPath("spec")))
+
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, gardenerValidations...)
+
+	return gardenerValidations
 }
 
 func toExtensionConfig(rc registrycache.RegistryCacheConfig) *registrycacheext.RegistryConfig {

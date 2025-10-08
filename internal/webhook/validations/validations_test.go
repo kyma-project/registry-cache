@@ -1,6 +1,7 @@
 package validations
 
 import (
+	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
 	registrycache "github.com/kyma-project/registry-cache/api/v1beta1"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -8,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -290,17 +292,6 @@ func TestDoOnUpdate(t *testing.T) {
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Volume: &registrycache.Volume{
-						Size:             ptr.To(resource.MustParse("10Gi")),
-						StorageClassName: ptr.To("standard"),
-					},
-					GarbageCollection: &registrycache.GarbageCollection{
-						TTL: metav1.Duration{Duration: 0},
-					},
-				},
-			},
-			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-				Spec: registrycache.RegistryCacheConfigSpec{
-					Volume: &registrycache.Volume{
 						Size:             ptr.To(resource.MustParse(NewVolumeSize)),
 						StorageClassName: ptr.To(NewStorageClassName),
 					},
@@ -309,10 +300,23 @@ func TestDoOnUpdate(t *testing.T) {
 					},
 				},
 			},
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Volume: &registrycache.Volume{
+						Size:             ptr.To(resource.MustParse("10Gi")),
+						StorageClassName: ptr.To("standard"),
+					},
+					GarbageCollection: &registrycache.GarbageCollection{
+						TTL: metav1.Duration{Duration: 0},
+					},
+				},
+			},
 			errorsList: field.ErrorList{
 				field.Invalid(volumeSizeFieldPath, NewVolumeSize, "field is immutable"),
-				field.Invalid(volumeStorageClassNameFieldPath, NewStorageClassName, "field is immutable"),
-				field.Invalid(garbageCollectionTTLFieldPath, NewGarbageCollectionValue, "garbage collection cannot be enabled"),
+				field.Invalid(volumeStorageClassNameFieldPath, ptr.To(NewStorageClassName), "field is immutable"),
+				field.Invalid(garbageCollectionTTLFieldPath, &registrycacheext.GarbageCollection{
+					TTL: metav1.Duration{Duration: 1 * time.Hour},
+				}, "garbage collection cannot be enabled"),
 			},
 		},
 		{
@@ -453,7 +457,7 @@ func validateResult(t *testing.T, expectedErrors field.ErrorList, actualErrors f
 		actualErrIndex := slices.IndexFunc(actualErrors, func(err *field.Error) bool {
 			return err.Type == expectedErr.Type &&
 				expectedErr.Field == err.Field &&
-				expectedErr.BadValue == err.BadValue &&
+				reflect.DeepEqual(expectedErr.BadValue, err.BadValue) &&
 				strings.Contains(err.Detail, expectedErr.Detail)
 		})
 		require.NotEqual(t, -1, actualErrIndex, "actual error not found: %v", expectedErr)

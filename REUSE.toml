@@ -1,7 +1,7 @@
 version = 1
 SPDX-PackageName = "registry-cache"
 SPDX-PackageSupplier = "Framefrog Team <team-framefrog@sap.com>"
-SPDX-PackageDownloadLocation = "https://github.com/kyma-project/kim-snatch"
+SPDX-PackageDownloadLocation = "https://github.com/kyma-project/registry-cache"
 SPDX-PackageComment = """
 The code in this project may include calls to APIs ("API Calls") of
 SAP or third-party products or services developed outside of this project

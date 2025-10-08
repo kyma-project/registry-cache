@@ -1,0 +1,21 @@
+apiVersion: cert.gardener.cloud/v1alpha1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/created-by: registry-cache
+    app.kubernetes.io/part-of: registry-cache
+    app.kubernetes.io/managed-by: kustomize
+  name: kyma
+  namespace: system
+spec:
+  commonName: registry-cache-service.kyma-system
+  dnsNames:
+  - registry-cache-webhook-service.kyma-system.svc
+  - registry-cache-webhook-service.kyma-system.svc.cluster.local
+  isCA: true
+  issuerRef:
+    name: kyma
+    namespace: system
+  secretRef:
+    name: registry-cache-certificates
+    namespace: system

@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/created-by: registry-cache
+    app.kubernetes.io/part-of: registry-cache
+    app.kubernetes.io/managed-by: kustomize
+  name: kyma  # this name should match the one appeared in kustomizeconfig.yaml
+  namespace: kyma-system
+spec:
+  dnsNames:
+  - registry-cache-webhook-service.kyma-system.svc
+  - registry-cache-webhook-service.kyma-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: kyma
+  secretName: registry-cache-certificates # this secret will not be prefixed, since it's not managed by kustomize
+

@@ -1,0 +1,194 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: registrycacheconfigs.core.kyma-project.io
+spec:
+  group: core.kyma-project.io
+  names:
+    kind: RegistryCacheConfig
+    listKind: RegistryCacheConfigList
+    plural: registrycacheconfigs
+    singular: registrycacheconfig
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: RegistryCacheConfig is the Schema for the registrycacheconfigs
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: RegistryCacheConfigSpec defines the desired state of RegistryCacheConfig.
+            properties:
+              garbageCollection:
+                description: |-
+                  GarbageCollection contains settings for the garbage collection of content from the cache.
+                  Defaults to enabled garbage collection.
+                properties:
+                  ttl:
+                    default: 168h
+                    description: |-
+                      TTL is the time to live of a blob in the cache.
+                      Set to 0s to disable the garbage collection.
+                      Defaults to 168h (7 days).
+                    type: string
+                required:
+                - ttl
+                type: object
+              http:
+                description: HTTP contains settings for the HTTP server that hosts
+                  the registry cache.
+                properties:
+                  tls:
+                    description: |-
+                      TLS indicates whether TLS is enabled for the HTTP server of the registry cache.
+                      Defaults to true.
+                    type: boolean
+                type: object
+              proxy:
+                description: Proxy contains settings for a proxy used in the registry
+                  cache.
+                properties:
+                  httpProxy:
+                    description: HTTPProxy field represents the proxy server for HTTP
+                      connections which is used by the registry cache.
+                    type: string
+                  httpsProxy:
+                    description: HTTPSProxy field represents the proxy server for
+                      HTTPS connections which is used by the registry cache.
+                    type: string
+                type: object
+              remoteURL:
+                description: |-
+                  RemoteURL is the remote registry URL. The format must be `<scheme><host>[:<port>]` where
+                  `<scheme>` is `https://` or `http://` and `<host>[:<port>]` corresponds to the Upstream
+
+                  If defined, the value is set as `proxy.remoteurl` in the registry [configuration](https://github.com/distribution/distribution/blob/main/docs/content/recipes/mirror.md#configure-the-cache)
+                  and in containerd configuration as `server` field in [hosts.toml](https://github.com/containerd/containerd/blob/main/docs/hosts.md#server-field) file.
+                type: string
+              secretReferenceName:
+                description: SecretReferenceName is the name of the reference for
+                  the Secret containing the upstream registry credentials.
+                type: string
+              upstream:
+                description: Upstream is the remote registry host to cache.
+                type: string
+              volume:
+                description: Volume contains settings for the registry cache volume.
+                properties:
+                  size:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    default: 10Gi
+                    description: |-
+                      Size is the size of the registry cache volume.
+                      Defaults to 10Gi.
+                      This field is immutable.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storageClassName:
+                    description: |-
+                      StorageClassName is the name of the StorageClass used by the registry cache volume.
+                      This field is immutable.
+                    type: string
+                type: object
+            required:
+            - upstream
+            type: object
+          status:
+            properties:
+              conditions:
+                description: List of status conditions to indicate the status of a
+                  ServiceInstance.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              state:
+                description: State signifies current state of Runtime
+                enum:
+                - Pending
+                - Ready
+                - Terminating
+                - Failed
+                type: string
+            required:
+            - state
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

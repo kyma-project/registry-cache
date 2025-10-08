@@ -272,6 +272,20 @@ func TestDoOnUpdate(t *testing.T) {
 			errorsList: field.ErrorList{},
 		},
 		{
+			name: "empty spec",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{},
+			},
+			errorsList: field.ErrorList{
+				field.Required(field.NewPath("spec"), "spec must not be empty"),
+			},
+		},
+		{
 			name: "invalid spec",
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				Spec: registrycache.RegistryCacheConfigSpec{

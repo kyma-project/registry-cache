@@ -165,7 +165,7 @@ func TestDo(t *testing.T) {
 			},
 		},
 		{
-			name:    "secret with incorrect structure",
+			name:    "secret with invalid structure",
 			secrets: []v1.Secret{secretWithIncorrectStructure},
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
@@ -185,9 +185,6 @@ func TestDo(t *testing.T) {
 		},
 		{
 			name: "mutable secret",
-			secrets: []v1.Secret{
-				mutableSecret,
-			},
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "config-with-invalid-secret",
@@ -217,6 +214,41 @@ func TestDoOnUpdate(t *testing.T) {
 	volumeStorageClassNameFieldPath := field.NewPath("spec").Child("volume").Child("storageClassName")
 	garbageCollectionTTLFieldPath := field.NewPath("spec").Child("garbageCollection").Child("ttl")
 
+	validSecret := v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "valid-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"username": []byte("dXNlcg=="),
+			"password": []byte("cGFzc3dvcmQ="),
+		},
+		Immutable: ptr.To(true),
+	}
+
+	secretWithIncorrectStructure := v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalid-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"invalid-key": []byte("invalid-value"),
+		},
+		Immutable: ptr.To(true),
+	}
+
+	mutableSecret := v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "mutable-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"username": []byte("dXNlcg=="),
+			"password": []byte("cGFzc3dvcmQ="),
+		},
+		Immutable: ptr.To(false),
+	}
+
 	for _, tt := range []struct {
 		name                   string
 		newRegistryCacheConfig registrycache.RegistryCacheConfig
@@ -234,7 +266,7 @@ func TestDoOnUpdate(t *testing.T) {
 			},
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				Spec: registrycache.RegistryCacheConfigSpec{
-					Upstream: "docker.io",
+					Upstream: "quay.io",
 				},
 			},
 			errorsList: field.ErrorList{},
@@ -267,6 +299,128 @@ func TestDoOnUpdate(t *testing.T) {
 				field.Invalid(volumeSizeFieldPath, NewVolumeSize, "field is immutable"),
 				field.Invalid(volumeStorageClassNameFieldPath, NewStorageClassName, "field is immutable"),
 				field.Invalid(garbageCollectionTTLFieldPath, NewGarbageCollectionValue, "garbage collection cannot be enabled"),
+			},
+		},
+		{
+			name: "non existent secret reference name",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To(validSecret.Name),
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To("non-existent-secret"),
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), "non-existent-secret", "secret does not exist"),
+			},
+			secrets: []v1.Secret{
+				validSecret,
+			},
+		},
+		{
+			name:    "secret with invalid structure",
+			secrets: []v1.Secret{secretWithIncorrectStructure},
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config-with-invalid-secret",
+					Namespace: "default",
+				},
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To(validSecret.Name),
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config-with-invalid-secret",
+					Namespace: "default",
+				},
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To(secretWithIncorrectStructure.Name),
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), secretWithIncorrectStructure.Name, "two data entries"),
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"username\" data entry"),
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"password\" data entry"),
+			},
+		},
+		{
+			name: "mutable secret",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config-with-invalid-secret",
+					Namespace: "default",
+				},
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To(validSecret.Name),
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config-with-invalid-secret",
+					Namespace: "default",
+				},
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To(mutableSecret.Name),
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), mutableSecret.Name, "should be immutable"),
+			},
+		},
+		{
+			name: "duplicated upstream",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "docker.io",
+				},
+			},
+			existingConfigs: []registrycache.RegistryCacheConfig{
+				{
+					Spec: registrycache.RegistryCacheConfigSpec{
+						Upstream: "docker.io",
+					},
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Duplicate(field.NewPath("spec").Child("upstream"), "docker.io"),
+			},
+		},
+		{
+			name: "upstream non-resolvable",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "some.incorrect.repo.io",
+				},
+			},
+			existingConfigs: []registrycache.RegistryCacheConfig{
+				{
+					Spec: registrycache.RegistryCacheConfigSpec{
+						Upstream: "docker.io",
+					},
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Invalid(field.NewPath("spec").Child("upstream"), "some.incorrect.repo.io", "upstream is not DNS resolvable"),
 			},
 		},
 	} {

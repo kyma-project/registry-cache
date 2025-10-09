@@ -87,7 +87,39 @@ func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheC
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, gardenerValidations...)
 
-	return gardenerValidations
+	if newConfig.Spec.SecretReferenceName != nil {
+		secretIndex := slices.IndexFunc(v.secrets, func(secret v1.Secret) bool {
+			return secret.Name == *newConfig.Spec.SecretReferenceName && secret.Namespace == newConfig.Namespace
+		})
+
+		if secretIndex == -1 {
+			errMsg := fmt.Sprintf("referenced secret does not exist: %v", *newConfig.Spec.SecretReferenceName)
+
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName, errMsg))
+		} else {
+			secret := v.secrets[secretIndex]
+			secretErrors := registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)
+			if len(secretErrors) > 0 {
+				allErrs = append(allErrs, secretErrors...)
+			}
+		}
+	}
+
+	for _, existingConfig := range v.existingConfigs {
+		if existingConfig.Spec.Upstream == newConfig.Spec.Upstream {
+			appendedErr := field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream)
+			allErrs = append(allErrs, appendedErr)
+		}
+	}
+
+	resolvable, err := IsDNSResolvable(context.Background(), newConfig.Spec.Upstream)
+	if !resolvable && err == nil {
+		// TODO: handle case with errors (e.g. timeout)
+		nonResolvableErr := field.Invalid(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream, "upstream is not DNS resolvable")
+		allErrs = append(allErrs, nonResolvableErr)
+	}
+
+	return allErrs
 }
 
 func toExtensionConfig(rc registrycache.RegistryCacheConfig) *registrycacheext.RegistryConfig {

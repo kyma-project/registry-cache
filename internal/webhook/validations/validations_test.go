@@ -186,7 +186,8 @@ func TestDo(t *testing.T) {
 			},
 		},
 		{
-			name: "mutable secret",
+			name:    "mutable secret",
+			secrets: []v1.Secret{mutableSecret},
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "config-with-invalid-secret",
@@ -370,7 +371,8 @@ func TestDoOnUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "mutable secret",
+			name:    "mutable secret",
+			secrets: []v1.Secret{validSecret, mutableSecret},
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "config-with-invalid-secret",

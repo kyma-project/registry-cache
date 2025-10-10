@@ -18,8 +18,10 @@ package v1beta1
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/kyma-project/registry-cache/internal/webhook/validations"
+	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,9 +37,9 @@ import (
 var registrycacheconfiglog = logf.Log.WithName("registrycacheconfig-resource")
 
 // SetupRegistryCacheConfigWebhookWithManager registers the webhook for RegistryCacheConfig in the manager.
-func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager) error {
+func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager, client client.Client) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&corekymaprojectiov1beta1.RegistryCacheConfig{}).
-		WithValidator(&RegistryCacheConfigCustomValidator{}).
+		WithValidator(NewRegistryCacheConfigCustomValidator(client)).
 		Complete()
 }
 
@@ -52,7 +54,13 @@ func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager) error {
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
 type RegistryCacheConfigCustomValidator struct {
-	// TODO(user): Add more fields as needed for validation
+	client client.Client
+}
+
+func NewRegistryCacheConfigCustomValidator(client client.Client) *RegistryCacheConfigCustomValidator {
+	return &RegistryCacheConfigCustomValidator{
+		client: client,
+	}
 }
 
 var _ webhook.CustomValidator = &RegistryCacheConfigCustomValidator{}
@@ -66,23 +74,46 @@ func (v *RegistryCacheConfigCustomValidator) ValidateCreate(_ context.Context, o
 	}
 	registrycacheconfiglog.Info("Validation for RegistryCacheConfig upon creation", "name", registrycacheconfig.GetName())
 
-	// TODO(user): fill in your validation logic upon object creation.
+	var registrycacheconfigs corekymaprojectiov1beta1.RegistryCacheConfigList
+	err := v.client.List(context.Background(), &registrycacheconfigs, client.InNamespace(registrycacheconfig.Namespace))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list existing RegistryCacheConfig resources: %w", err)
+	}
 
-	return nil, errors.New("not implemented temporarily")
+	var secretList v1.SecretList
+	if err := v.client.List(context.Background(), &secretList, client.InNamespace(registrycacheconfig.Namespace)); err != nil {
+		return nil, fmt.Errorf("failed to list secrets: %w", err)
+	}
+
+	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items).Do(registrycacheconfig).ToAggregate()
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.
 func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 
-	registrycacheconfig, ok := newObj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
+	newRegistryCacheConfig, ok := newObj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
 	if !ok {
 		return nil, fmt.Errorf("expected a RegistryCacheConfig object for the newObj but got %T", newObj)
 	}
-	registrycacheconfiglog.Info("Validation for RegistryCacheConfig upon update", "name", registrycacheconfig.GetName())
 
-	// TODO(user): fill in your validation logic upon object update.
+	var oldRegistryCacheConfig corekymaprojectiov1beta1.RegistryCacheConfig
+	err := v.client.Get(context.Background(), client.ObjectKey{Name: newRegistryCacheConfig.Name, Namespace: newRegistryCacheConfig.Namespace}, &oldRegistryCacheConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the old RegistryCacheConfig resource: %w", err)
+	}
 
-	return nil, errors.New("not implemented temporarily")
+	var registrycacheconfigs corekymaprojectiov1beta1.RegistryCacheConfigList
+	err = v.client.List(context.Background(), &registrycacheconfigs, client.InNamespace(newRegistryCacheConfig.Namespace))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list existing RegistryCacheConfig resources: %w", err)
+	}
+
+	var secretList v1.SecretList
+	if err := v.client.List(context.Background(), &secretList, client.InNamespace(newRegistryCacheConfig.Namespace)); err != nil {
+		return nil, fmt.Errorf("failed to list secrets: %w", err)
+	}
+
+	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items).DoOnUpdate(newRegistryCacheConfig, &oldRegistryCacheConfig).ToAggregate()
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.

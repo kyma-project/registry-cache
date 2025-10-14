@@ -85,7 +85,7 @@ func (v *RegistryCacheConfigCustomValidator) ValidateCreate(_ context.Context, o
 		return nil, fmt.Errorf("failed to list secrets: %w", err)
 	}
 
-	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items).Do(registrycacheconfig).ToAggregate()
+	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items, validations.DefaultDNSValidator{}).Do(registrycacheconfig).ToAggregate()
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.
@@ -113,7 +113,7 @@ func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, o
 		return nil, fmt.Errorf("failed to list secrets: %w", err)
 	}
 
-	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items).DoOnUpdate(newRegistryCacheConfig, &oldRegistryCacheConfig).ToAggregate()
+	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items, validations.DefaultDNSValidator{}).DoOnUpdate(newRegistryCacheConfig, &oldRegistryCacheConfig).ToAggregate()
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.

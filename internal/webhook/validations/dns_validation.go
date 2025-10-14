@@ -7,20 +7,22 @@ import (
 )
 
 // DNSValidation defines DNS resolvability checks used by the validator.
-type DNSValidation interface {
+//
+//go:generate mockery --name=DNSValidator
+type DNSValidator interface {
 	// IsResolvable returns true if the given host has at least one A/AAAA record.
 	IsResolvable(host string) bool
 }
 
 // RealDNSValidator is the production implementation using the net.Resolver.
-type DNSValidator struct {
+type DefaultDNSValidator struct {
 	// optional custom resolver; if nil, defaults to net.DefaultResolver
 	Resolver *net.Resolver
 	// optional timeout per lookup; defaults to 2s if zero
 	Timeout time.Duration
 }
 
-func (r DNSValidator) IsResolvable(host string) bool {
+func (r DefaultDNSValidator) IsResolvable(host string) bool {
 	if host == "" {
 		return false
 	}

@@ -1,8 +1,6 @@
 package validations
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
 	registrycacheextvalidations "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry/validation"
@@ -10,11 +8,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"net"
 	"net/url"
 	"slices"
 	"strings"
-	"time"
 )
 
 // Validator validates RegistryCacheConfig resources.
@@ -22,16 +18,16 @@ import (
 type Validator struct {
 	secrets         []v1.Secret
 	existingConfigs []registrycache.RegistryCacheConfig
-	dns             DNSValidation
+	dns             DNSValidator
 }
 
 // NewValidator constructs a Validator with provided secrets and existing configs.
 // Initialize the DNS validator with a real implementation by default.
-func NewValidator(secrets []v1.Secret, existing []registrycache.RegistryCacheConfig) Validator {
+func NewValidator(secrets []v1.Secret, existing []registrycache.RegistryCacheConfig, dnsValidator DNSValidator) Validator {
 	return Validator{
 		secrets:         secrets,
 		existingConfigs: existing,
-		dns:             DNSValidator{},
+		dns:             dnsValidator,
 	}
 }
 
@@ -221,39 +217,4 @@ func adjustPath(extensionPath string) string {
 	partsExtracted := append(parts[:1], parts[2:]...)
 
 	return strings.Join(partsExtracted, ".")
-}
-
-func IsDNSResolvable(ctx context.Context, hostname string) (bool, error) {
-	hostname = strings.TrimSpace(hostname)
-	if hostname == "" {
-		return false, errors.New("hostname is empty")
-	}
-	// Basic sanity: disallow spaces and schemes.
-	if strings.ContainsAny(hostname, " /:\\") {
-		return false, errors.New("hostname contains invalid characters")
-	}
-
-	// If caller did not set a deadline, apply a sane timeout.
-	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
-		defer cancel()
-	}
-
-	// Use the default resolver.
-	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", hostname)
-	if err != nil {
-		// Distinguish context errors (treat as hard errors) from NXDOMAIN etc.
-		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			return false, err
-		}
-		// For DNS errors (e.g. NXDOMAIN), return not resolvable without propagating error.
-		var dnsErr *net.DNSError
-		if errors.As(err, &dnsErr) {
-			return false, nil
-		}
-		// Unknown error: return it.
-		return false, err
-	}
-	return len(ips) > 0, nil
 }

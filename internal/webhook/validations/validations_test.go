@@ -106,6 +106,7 @@ func TestDo(t *testing.T) {
 			},
 			errorsList: field.ErrorList{
 				field.Invalid(upstreamFieldPath, InvalidUpstreamPort, "valid port must be in the range [1, 65535]"),
+				field.Invalid(upstreamFieldPath, InvalidUpstreamPort, "upstream is not DNS resolvable"),
 				field.Invalid(remoteURLFieldPath, InvalidRemoteURL, "url must start with 'http://' or 'https://'"),
 				field.Invalid(volumeSizeFieldPath, InvalidVolumeSize, "must be greater than 0"),
 				field.Invalid(garbageCollectionTTLFieldPath, "-1ns", "ttl must be a non-negative duration"),
@@ -266,14 +267,14 @@ func TestDoOnUpdate(t *testing.T) {
 	}{
 		{
 			name: "valid spec",
-			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
-				Spec: registrycache.RegistryCacheConfigSpec{
-					Upstream: "docker.io",
-				},
-			},
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "docker.io",
 				},
 			},
 			errorsList: field.ErrorList{},
@@ -294,17 +295,6 @@ func TestDoOnUpdate(t *testing.T) {
 		},
 		{
 			name: "invalid spec",
-			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
-				Spec: registrycache.RegistryCacheConfigSpec{
-					Volume: &registrycache.Volume{
-						Size:             ptr.To(resource.MustParse(NewVolumeSize)),
-						StorageClassName: ptr.To(NewStorageClassName),
-					},
-					GarbageCollection: &registrycache.GarbageCollection{
-						TTL: metav1.Duration{Duration: 1 * time.Hour},
-					},
-				},
-			},
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Volume: &registrycache.Volume{
@@ -313,6 +303,17 @@ func TestDoOnUpdate(t *testing.T) {
 					},
 					GarbageCollection: &registrycache.GarbageCollection{
 						TTL: metav1.Duration{Duration: 0},
+					},
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Volume: &registrycache.Volume{
+						Size:             ptr.To(resource.MustParse(NewVolumeSize)),
+						StorageClassName: ptr.To(NewStorageClassName),
+					},
+					GarbageCollection: &registrycache.GarbageCollection{
+						TTL: metav1.Duration{Duration: 1 * time.Hour},
 					},
 				},
 			},

@@ -135,7 +135,6 @@ func TestDo(t *testing.T) {
 				field.Duplicate(field.NewPath("spec").Child("upstream"), "docker.io"),
 			},
 		},
-		// TODO: consider remoteURL to be validated for resolvability
 		{
 			name: "upstream non-resolvable",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
@@ -143,15 +142,22 @@ func TestDo(t *testing.T) {
 					Upstream: "some.incorrect.repo.io",
 				},
 			},
-			existingConfigs: []registrycache.RegistryCacheConfig{
-				{
-					Spec: registrycache.RegistryCacheConfigSpec{
-						Upstream: "docker.io",
-					},
-				},
-			},
+			existingConfigs: []registrycache.RegistryCacheConfig{},
 			errorsList: field.ErrorList{
 				field.Invalid(field.NewPath("spec").Child("upstream"), "some.incorrect.repo.io", "upstream is not DNS resolvable"),
+			},
+		},
+		{
+			name: "remote url non-resolvable",
+			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:  "docker.io",
+					RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
+				},
+			},
+			existingConfigs: []registrycache.RegistryCacheConfig{},
+			errorsList: field.ErrorList{
+				field.Invalid(field.NewPath("spec").Child("remoteURL"), ptr.To("https://registry-not-existing.not-exists.io"), "remoteURL is not DNS resolvable"),
 			},
 		},
 		{
@@ -441,6 +447,31 @@ func TestDoOnUpdate(t *testing.T) {
 			},
 			errorsList: field.ErrorList{
 				field.Invalid(field.NewPath("spec").Child("upstream"), "some.incorrect.repo.io", "upstream is not DNS resolvable"),
+			},
+		},
+		{
+			name: "remoteURL non-resolvable",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:  "docker.io",
+					RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
+				},
+			},
+			existingConfigs: []registrycache.RegistryCacheConfig{
+				{
+					Spec: registrycache.RegistryCacheConfigSpec{
+						Upstream: "quay.io",
+					},
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Invalid(field.NewPath("spec").Child("remoteURL"), ptr.To("https://registry-not-existing.not-exists.io"), "remoteURL is not DNS resolvable"),
 			},
 		},
 	} {

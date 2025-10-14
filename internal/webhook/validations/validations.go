@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"net"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -66,11 +67,29 @@ func (v Validator) Do(newConfig *registrycache.RegistryCacheConfig) field.ErrorL
 	}
 
 	resolvable, err := IsDNSResolvable(context.Background(), newConfig.Spec.Upstream)
+	// If the URL is not valid, the Gardener validation will take care of it.
+	// We only want to check DNS resolvability for valid URLs.
+
 	if !resolvable && err == nil {
 		// TODO: handle case with errors (e.g. timeout)
 		nonResolvableErr := field.Invalid(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream, "upstream is not DNS resolvable")
 		allErrs = append(allErrs, nonResolvableErr)
 	}
+
+	if newConfig.Spec.RemoteURL != nil {
+		url, err := url.ParseRequestURI(*newConfig.Spec.RemoteURL)
+		// If the URL is not valid, the gardener validation will take care of it.
+		// We only want to check DNS resolvability for valid URLs.
+		if err == nil && url != nil {
+			remoteURLResolvable, err := IsDNSResolvable(context.Background(), url.Host)
+			if !remoteURLResolvable && err == nil {
+				// TODO: handle case with errors (e.g. timeout)
+				nonResolvableErr := field.Invalid(field.NewPath("spec").Child("remoteURL"), newConfig.Spec.RemoteURL, "remoteURL is not DNS resolvable")
+				allErrs = append(allErrs, nonResolvableErr)
+			}
+		}
+	}
+
 	return allErrs
 }
 
@@ -117,6 +136,20 @@ func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheC
 		// TODO: handle case with errors (e.g. timeout)
 		nonResolvableErr := field.Invalid(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream, "upstream is not DNS resolvable")
 		allErrs = append(allErrs, nonResolvableErr)
+	}
+
+	if newConfig.Spec.RemoteURL != nil {
+		url, err := url.ParseRequestURI(*newConfig.Spec.RemoteURL)
+		// If the URL is not valid, the gardener validation will take care of it.
+		// We only want to check DNS resolvability for valid URLs.
+		if err == nil && url != nil {
+			remoteURLResolvable, err := IsDNSResolvable(context.Background(), url.Host)
+			if !remoteURLResolvable && err == nil {
+				// TODO: handle case with errors (e.g. timeout)
+				nonResolvableErr := field.Invalid(field.NewPath("spec").Child("remoteURL"), newConfig.Spec.RemoteURL, "remoteURL is not DNS resolvable")
+				allErrs = append(allErrs, nonResolvableErr)
+			}
+		}
 	}
 
 	return allErrs

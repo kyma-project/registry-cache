@@ -73,7 +73,7 @@ type RegistryCacheStatus struct {
 	// Value can be one of ("Ready", "Processing", "Error", "Deleting", "Warning", or empty).
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error;Warning;""
-	State State `json:",inline"`
+	State State `json:"state"`
 
 	// Conditions contain a set of conditionals to determine the State of Status.
 	// If all Conditions are met, State is expected to be in StateReady.

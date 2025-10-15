@@ -1,6 +1,7 @@
 package validations
 
 import (
+	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
 	registrycache "github.com/kyma-project/registry-cache/api/v1beta1"
 	"github.com/kyma-project/registry-cache/internal/webhook/validations/mocks"
 	"github.com/stretchr/testify/mock"
@@ -14,6 +15,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -235,9 +237,9 @@ func TestDo(t *testing.T) {
 
 func TestDoOnUpdate(t *testing.T) {
 
-	//volumeSizeFieldPath := field.NewPath("spec").Child("volume").Child("size")
-	//volumeStorageClassNameFieldPath := field.NewPath("spec").Child("volume").Child("storageClassName")
-	//garbageCollectionTTLFieldPath := field.NewPath("spec").Child("garbageCollection").Child("ttl")
+	volumeSizeFieldPath := field.NewPath("spec").Child("volume").Child("size")
+	volumeStorageClassNameFieldPath := field.NewPath("spec").Child("volume").Child("storageClassName")
+	garbageCollectionTTLFieldPath := field.NewPath("spec").Child("garbageCollection").Child("ttl")
 
 	validSecret := v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -291,115 +293,115 @@ func TestDoOnUpdate(t *testing.T) {
 		secrets                []v1.Secret
 		dnsValidator           DNSValidator
 	}{
-		//{
-		//	name: "valid spec",
-		//	oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Upstream: "quay.io",
-		//		},
-		//	},
-		//	newRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Upstream: "docker.io",
-		//		},
-		//	},
-		//	errorsList:   field.ErrorList{},
-		//	dnsValidator: dnsResolverAlwaysTrue,
-		//},
-		//{
-		//	name: "empty spec",
-		//	oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Upstream: "quay.io",
-		//		},
-		//	},
-		//	newRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{},
-		//	},
-		//	errorsList: field.ErrorList{
-		//		field.Required(field.NewPath("spec"), "spec must not be empty"),
-		//	},
-		//	dnsValidator: dnsResolverAlwaysTrue,
-		//},
-		//{
-		//	name: "invalid spec",
-		//	oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Volume: &registrycache.Volume{
-		//				Size:             ptr.To(resource.MustParse("10Gi")),
-		//				StorageClassName: ptr.To("standard"),
-		//			},
-		//			GarbageCollection: &registrycache.GarbageCollection{
-		//				TTL: metav1.Duration{Duration: 0},
-		//			},
-		//		},
-		//	},
-		//	newRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Volume: &registrycache.Volume{
-		//				Size:             ptr.To(resource.MustParse(NewVolumeSize)),
-		//				StorageClassName: ptr.To(NewStorageClassName),
-		//			},
-		//			GarbageCollection: &registrycache.GarbageCollection{
-		//				TTL: metav1.Duration{Duration: 1 * time.Hour},
-		//			},
-		//		},
-		//	},
-		//	errorsList: field.ErrorList{
-		//		field.Invalid(volumeSizeFieldPath, NewVolumeSize, "field is immutable"),
-		//		field.Invalid(volumeStorageClassNameFieldPath, ptr.To(NewStorageClassName), "field is immutable"),
-		//		field.Invalid(garbageCollectionTTLFieldPath, &registrycacheext.GarbageCollection{
-		//			TTL: metav1.Duration{Duration: 1 * time.Hour},
-		//		}, "garbage collection cannot be enabled"),
-		//	},
-		//	dnsValidator: dnsResolverAlwaysTrue,
-		//},
-		//{
-		//	name: "non existent secret reference name",
-		//	oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Upstream:            "docker.io",
-		//			SecretReferenceName: ptr.To(validSecret.Name),
-		//		},
-		//	},
-		//	newRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Upstream:            "docker.io",
-		//			SecretReferenceName: ptr.To("non-existent-secret"),
-		//		},
-		//	},
-		//	errorsList: field.ErrorList{
-		//		field.Invalid(field.NewPath("spec").Child("secretReferenceName"), "non-existent-secret", "secret does not exist"),
-		//	},
-		//	secrets: []v1.Secret{
-		//		validSecret,
-		//	},
-		//	dnsValidator: dnsResolverAlwaysTrue,
-		//},
-		//{
-		//	name: "duplicated upstream",
-		//	oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Upstream: "quay.io",
-		//		},
-		//	},
-		//	newRegistryCacheConfig: registrycache.RegistryCacheConfig{
-		//		Spec: registrycache.RegistryCacheConfigSpec{
-		//			Upstream: "docker.io",
-		//		},
-		//	},
-		//	existingConfigs: []registrycache.RegistryCacheConfig{
-		//		{
-		//			Spec: registrycache.RegistryCacheConfigSpec{
-		//				Upstream: "docker.io",
-		//			},
-		//		},
-		//	},
-		//	errorsList: field.ErrorList{
-		//		field.Duplicate(field.NewPath("spec").Child("upstream"), "docker.io"),
-		//	},
-		//	dnsValidator: dnsResolverAlwaysTrue,
-		//},
+		{
+			name: "valid spec",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "docker.io",
+				},
+			},
+			errorsList:   field.ErrorList{},
+			dnsValidator: dnsResolverAlwaysTrue,
+		},
+		{
+			name: "empty spec",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{},
+			},
+			errorsList: field.ErrorList{
+				field.Required(field.NewPath("spec"), "spec must not be empty"),
+			},
+			dnsValidator: dnsResolverAlwaysTrue,
+		},
+		{
+			name: "invalid spec",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Volume: &registrycache.Volume{
+						Size:             ptr.To(resource.MustParse("10Gi")),
+						StorageClassName: ptr.To("standard"),
+					},
+					GarbageCollection: &registrycache.GarbageCollection{
+						TTL: metav1.Duration{Duration: 0},
+					},
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Volume: &registrycache.Volume{
+						Size:             ptr.To(resource.MustParse(NewVolumeSize)),
+						StorageClassName: ptr.To(NewStorageClassName),
+					},
+					GarbageCollection: &registrycache.GarbageCollection{
+						TTL: metav1.Duration{Duration: 1 * time.Hour},
+					},
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Invalid(volumeSizeFieldPath, NewVolumeSize, "field is immutable"),
+				field.Invalid(volumeStorageClassNameFieldPath, ptr.To(NewStorageClassName), "field is immutable"),
+				field.Invalid(garbageCollectionTTLFieldPath, &registrycacheext.GarbageCollection{
+					TTL: metav1.Duration{Duration: 1 * time.Hour},
+				}, "garbage collection cannot be enabled"),
+			},
+			dnsValidator: dnsResolverAlwaysTrue,
+		},
+		{
+			name: "non existent secret reference name",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To(validSecret.Name),
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To("non-existent-secret"),
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"), "non-existent-secret", "secret does not exist"),
+			},
+			secrets: []v1.Secret{
+				validSecret,
+			},
+			dnsValidator: dnsResolverAlwaysTrue,
+		},
+		{
+			name: "duplicated upstream",
+			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "quay.io",
+				},
+			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream: "docker.io",
+				},
+			},
+			existingConfigs: []registrycache.RegistryCacheConfig{
+				{
+					Spec: registrycache.RegistryCacheConfigSpec{
+						Upstream: "docker.io",
+					},
+				},
+			},
+			errorsList: field.ErrorList{
+				field.Duplicate(field.NewPath("spec").Child("upstream"), "docker.io"),
+			},
+			dnsValidator: dnsResolverAlwaysTrue,
+		},
 		{
 			name: "upstream non-resolvable",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{

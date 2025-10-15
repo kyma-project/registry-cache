@@ -296,17 +296,38 @@ func TestDoOnUpdate(t *testing.T) {
 		{
 			name: "valid spec",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-				Spec: registrycache.RegistryCacheConfigSpec{
-					Upstream: "quay.io",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config",
+					Namespace: "default",
 				},
-			},
-			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "docker.io",
 				},
 			},
+			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config",
+					Namespace: "default",
+				},
+				Spec: registrycache.RegistryCacheConfigSpec{
+					Upstream:            "docker.io",
+					SecretReferenceName: ptr.To(validSecret.Name),
+				},
+			},
 			errorsList:   field.ErrorList{},
 			dnsValidator: dnsResolverAlwaysTrue,
+			existingConfigs: []registrycache.RegistryCacheConfig{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "config",
+						Namespace: "default",
+					},
+					Spec: registrycache.RegistryCacheConfigSpec{
+						Upstream: "docker.io",
+					},
+				},
+			},
+			secrets: []v1.Secret{validSecret},
 		},
 		{
 			name: "empty spec",
@@ -381,17 +402,38 @@ func TestDoOnUpdate(t *testing.T) {
 		{
 			name: "duplicated upstream",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "quay.io",
 				},
 			},
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "docker.io",
 				},
 			},
 			existingConfigs: []registrycache.RegistryCacheConfig{
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "config1",
+						Namespace: "default",
+					},
+					Spec: registrycache.RegistryCacheConfigSpec{
+						Upstream: "quay.io",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "config2",
+						Namespace: "default",
+					},
 					Spec: registrycache.RegistryCacheConfigSpec{
 						Upstream: "docker.io",
 					},

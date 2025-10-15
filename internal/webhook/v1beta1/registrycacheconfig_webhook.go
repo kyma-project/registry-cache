@@ -96,14 +96,13 @@ func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, o
 		return nil, fmt.Errorf("expected a RegistryCacheConfig object for the newObj but got %T", newObj)
 	}
 
-	var oldRegistryCacheConfig corekymaprojectiov1beta1.RegistryCacheConfig
-	err := v.client.Get(context.Background(), client.ObjectKey{Name: newRegistryCacheConfig.Name, Namespace: newRegistryCacheConfig.Namespace}, &oldRegistryCacheConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get the old RegistryCacheConfig resource: %w", err)
+	oldRegistryCacheConfig, ok := oldObj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
+	if !ok {
+		return nil, fmt.Errorf("expected a RegistryCacheConfig object for the newObj but got %T", newObj)
 	}
 
 	var registrycacheconfigs corekymaprojectiov1beta1.RegistryCacheConfigList
-	err = v.client.List(context.Background(), &registrycacheconfigs, client.InNamespace(newRegistryCacheConfig.Namespace))
+	err := v.client.List(context.Background(), &registrycacheconfigs, client.InNamespace(newRegistryCacheConfig.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list existing RegistryCacheConfig resources: %w", err)
 	}
@@ -113,7 +112,7 @@ func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, o
 		return nil, fmt.Errorf("failed to list secrets: %w", err)
 	}
 
-	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items, validations.DefaultDNSValidator{}).DoOnUpdate(newRegistryCacheConfig, &oldRegistryCacheConfig).ToAggregate()
+	return nil, validations.NewValidator(secretList.Items, registrycacheconfigs.Items, validations.DefaultDNSValidator{}).DoOnUpdate(newRegistryCacheConfig, oldRegistryCacheConfig).ToAggregate()
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.

@@ -36,16 +36,11 @@ func (v Validator) Do(newConfig *registrycache.RegistryCacheConfig) field.ErrorL
 		return field.ErrorList{field.Required(field.NewPath("spec"), "spec must not be empty")}
 	}
 
-	objectToValidate := toExtensionConfig(*newConfig)
+	allErrs := v.validateCommon(newConfig)
 
-	gardenerValidations := transformFieldErrors(registrycacheextvalidations.ValidateRegistryConfig(objectToValidate, field.NewPath("spec")))
+	gardenerValidations := registrycacheextvalidations.ValidateRegistryConfig(toExtensionConfig(*newConfig), field.NewPath("spec"))
 
-	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, gardenerValidations...)
-
-	allErrs = append(allErrs, v.validateCommon(newConfig)...)
-
-	return allErrs
+	return append(allErrs, transformFieldErrors(gardenerValidations)...)
 }
 
 func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheConfig) field.ErrorList {
@@ -53,17 +48,11 @@ func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheC
 		return field.ErrorList{field.Required(field.NewPath("spec"), "spec must not be empty")}
 	}
 
-	oldConfigExt := toExtensionConfig(*oldConfig)
-	objectToValidate := toExtensionConfig(*newConfig)
+	allErrs := v.validateCommon(newConfig)
 
-	gardenerValidations := transformFieldErrors(registrycacheextvalidations.ValidateRegistryConfigUpdate(oldConfigExt, objectToValidate, field.NewPath("spec")))
+	gardenerValidations := registrycacheextvalidations.ValidateRegistryConfigUpdate(toExtensionConfig(*oldConfig), toExtensionConfig(*newConfig), field.NewPath("spec"))
 
-	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, gardenerValidations...)
-
-	allErrs = append(allErrs, v.validateCommon(newConfig)...)
-
-	return allErrs
+	return append(allErrs, transformFieldErrors(gardenerValidations)...)
 }
 
 func (v Validator) validateCommon(newConfig *registrycache.RegistryCacheConfig) field.ErrorList {
@@ -124,9 +113,14 @@ func validateUpstreamUniqueness(newConfig *registrycache.RegistryCacheConfig, ex
 	var allErrs field.ErrorList
 
 	for _, existingConfig := range existingConfigs {
+		if existingConfig.Name == newConfig.Name && existingConfig.Namespace == newConfig.Namespace {
+			continue
+		}
+
 		if existingConfig.Spec.Upstream == newConfig.Spec.Upstream {
 			appendedErr := field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream)
 			allErrs = append(allErrs, appendedErr)
+			break
 		}
 	}
 

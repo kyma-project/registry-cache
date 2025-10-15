@@ -1,7 +1,6 @@
 package validations
 
 import (
-	"fmt"
 	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
 	registrycacheextvalidations "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry/validation"
 	registrycache "github.com/kyma-project/registry-cache/api/v1beta1"
@@ -162,8 +161,10 @@ func validateSecretReferenceName(newConfig *registrycache.RegistryCacheConfig, s
 			return secret.Name == *newConfig.Spec.SecretReferenceName && secret.Namespace == newConfig.Namespace
 		})
 		if secretIndex == -1 {
-			errMsg := fmt.Sprintf("referenced secret does not exist: %v", *newConfig.Spec.SecretReferenceName)
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName, errMsg))
+			allErrs = append(allErrs,
+				field.Invalid(field.NewPath("spec").Child("secretReferenceName"),
+					*newConfig.Spec.SecretReferenceName, "secret does not exist"),
+			)
 		} else {
 			secret := secrets[secretIndex]
 			secretErrors := registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)

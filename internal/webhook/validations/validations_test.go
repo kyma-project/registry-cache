@@ -31,6 +31,7 @@ const (
 )
 
 func TestDo(t *testing.T) {
+	// Common field paths
 	upstreamFieldPath := fieldPathSpec("upstream")
 	remoteURLFieldPath := fieldPathSpec("remoteURL")
 	volumeSizeFieldPath := fieldPathSpec("volume", "size")
@@ -38,6 +39,7 @@ func TestDo(t *testing.T) {
 	httpProxyFieldPath := fieldPathSpec("proxy", "httpProxy")
 	httpsProxyFieldPath := fieldPathSpec("proxy", "httpsProxy")
 
+	// Shared test fixtures
 	secretWithIncorrectStructure := buildSecret(
 		"invalid-secret", "default", true,
 		map[string][]byte{"invalid-key": []byte("invalid-value")},
@@ -47,6 +49,7 @@ func TestDo(t *testing.T) {
 		map[string][]byte{"username": []byte("user"), "password": []byte("password")},
 	)
 
+	// DNS mocks
 	dnsResolverAlwaysTrue := &mocks.DNSValidator{}
 	dnsResolverAlwaysTrue.On("IsResolvable", mock.Anything).Return(true)
 
@@ -55,147 +58,128 @@ func TestDo(t *testing.T) {
 	dnsResolver.On("IsResolvable", "registry-not-existing.not-exists.io").Return(false)
 	dnsResolver.On("IsResolvable", "some.incorrect.repo.io").Return(false)
 
-	for _, tt := range []struct {
-		name string
-		registrycache.RegistryCacheConfig
-		existingConfigs []registrycache.RegistryCacheConfig
-		errorsList      field.ErrorList
-		secrets         []v1.Secret
-		dnsValidator    DNSValidator
-	}{
-		{
-			name: "valid spec",
-			RegistryCacheConfig: buildConfig("", "", registrycache.RegistryCacheConfigSpec{
-				Upstream:  "docker.io",
-				RemoteURL: ptr.To("https://registry-1.docker.io"),
-			}),
-			errorsList:   field.ErrorList{},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name:                "empty spec",
-			RegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{}),
-			errorsList: field.ErrorList{
-				field.Required(field.NewPath("spec"), "spec must not be empty"),
+	t.Run("happy path", func(t *testing.T) {
+		cfg := buildConfig("", "", registrycache.RegistryCacheConfigSpec{
+			Upstream:  "docker.io",
+			RemoteURL: ptr.To("https://registry-1.docker.io"),
+		})
+		errs := NewValidator(nil, nil, dnsResolverAlwaysTrue).Do(&cfg)
+		validateResult(t, field.ErrorList{}, errs)
+	})
+
+	t.Run("spec emptiness", func(t *testing.T) {
+		cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{})
+		errs := NewValidator(nil, nil, dnsResolverAlwaysTrue).Do(&cfg)
+		validateResult(t, field.ErrorList{
+			field.Required(field.NewPath("spec"), "spec must not be empty"),
+		}, errs)
+	})
+
+	t.Run("field validation (invalid values)", func(t *testing.T) {
+		cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream:  InvalidUpstreamPort,
+			RemoteURL: ptr.To(InvalidRemoteURL),
+			Volume: &registrycache.Volume{
+				Size: ptr.To(resource.MustParse(InvalidVolumeSize)),
 			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name: "invalid spec",
-			RegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:  InvalidUpstreamPort,
-				RemoteURL: ptr.To(InvalidRemoteURL),
-				Volume: &registrycache.Volume{
-					Size: ptr.To(resource.MustParse(InvalidVolumeSize)),
-				},
-				GarbageCollection: &registrycache.GarbageCollection{
-					TTL: metav1.Duration{Duration: InvalidGarbageCollectionValue},
-				},
-				Proxy: &registrycache.Proxy{
-					HTTPProxy:  ptr.To(InvalidHttpProxyUrl),
-					HTTPSProxy: ptr.To(InvalidHttpsProxyUrl),
-				},
-			}),
-			errorsList: field.ErrorList{
-				field.Invalid(upstreamFieldPath, InvalidUpstreamPort, "valid port must be in the range [1, 65535]"),
-				field.Invalid(remoteURLFieldPath, InvalidRemoteURL, "url must start with 'http://' or 'https://'"),
-				field.Invalid(volumeSizeFieldPath, InvalidVolumeSize, "must be greater than 0"),
-				field.Invalid(garbageCollectionTTLFieldPath, "-1ns", "ttl must be a non-negative duration"),
-				field.Invalid(httpProxyFieldPath, InvalidHttpProxyUrl, "url must start with 'http://' or 'https://"),
-				field.Invalid(httpProxyFieldPath, InvalidHttpProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
-				field.Invalid(httpsProxyFieldPath, InvalidHttpsProxyUrl, "url must start with 'http://' or 'https://"),
-				field.Invalid(httpsProxyFieldPath, InvalidHttpsProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
+			GarbageCollection: &registrycache.GarbageCollection{
+				TTL: metav1.Duration{Duration: InvalidGarbageCollectionValue},
 			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name: "duplicated upstream",
-			RegistryCacheConfig: buildConfig("config2", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "docker.io",
-			}),
-			existingConfigs: []registrycache.RegistryCacheConfig{
-				buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-					Upstream: "docker.io",
-				}),
+			Proxy: &registrycache.Proxy{
+				HTTPProxy:  ptr.To(InvalidHttpProxyUrl),
+				HTTPSProxy: ptr.To(InvalidHttpsProxyUrl),
 			},
-			errorsList: field.ErrorList{
-				field.Duplicate(upstreamFieldPath, "docker.io"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name: "upstream non-resolvable",
-			RegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "some.incorrect.repo.io",
-			}),
-			existingConfigs: []registrycache.RegistryCacheConfig{},
-			errorsList: field.ErrorList{
-				field.Invalid(upstreamFieldPath, "some.incorrect.repo.io", "upstream is not DNS resolvable"),
-			},
-			dnsValidator: dnsResolver,
-		},
-		{
-			name: "remote url non-resolvable",
-			RegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:  "docker.io",
-				RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
-			}),
-			existingConfigs: []registrycache.RegistryCacheConfig{},
-			errorsList: field.ErrorList{
-				field.Invalid(remoteURLFieldPath, ptr.To("https://registry-not-existing.not-exists.io"), "remoteURL is not DNS resolvable"),
-			},
-			dnsValidator: dnsResolver,
-		},
-		{
-			name: "non existent secret reference name",
-			RegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+		})
+		errs := NewValidator(nil, nil, dnsResolverAlwaysTrue).Do(&cfg)
+		validateResult(t, field.ErrorList{
+			field.Invalid(upstreamFieldPath, InvalidUpstreamPort, "valid port must be in the range [1, 65535]"),
+			field.Invalid(remoteURLFieldPath, InvalidRemoteURL, "url must start with 'http://' or 'https://'"),
+			field.Invalid(volumeSizeFieldPath, InvalidVolumeSize, "must be greater than 0"),
+			field.Invalid(garbageCollectionTTLFieldPath, "-1ns", "ttl must be a non-negative duration"),
+			field.Invalid(httpProxyFieldPath, InvalidHttpProxyUrl, "url must start with 'http://' or 'https://"),
+			field.Invalid(httpProxyFieldPath, InvalidHttpProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
+			field.Invalid(httpsProxyFieldPath, InvalidHttpsProxyUrl, "url must start with 'http://' or 'https://"),
+			field.Invalid(httpsProxyFieldPath, InvalidHttpsProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
+		}, errs)
+	})
+
+	t.Run("uniqueness", func(t *testing.T) {
+		cfg := buildConfig("config2", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "docker.io",
+		})
+		existing := []registrycache.RegistryCacheConfig{
+			buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{Upstream: "docker.io"}),
+		}
+		errs := NewValidator(nil, existing, dnsResolverAlwaysTrue).Do(&cfg)
+		validateResult(t, field.ErrorList{
+			field.Duplicate(upstreamFieldPath, "docker.io"),
+		}, errs)
+	})
+
+	t.Run("dns upstream", func(t *testing.T) {
+		cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "some.incorrect.repo.io",
+		})
+		errs := NewValidator(nil, nil, dnsResolver).Do(&cfg)
+		validateResult(t, field.ErrorList{
+			field.Invalid(upstreamFieldPath, "some.incorrect.repo.io", "upstream is not DNS resolvable"),
+		}, errs)
+	})
+
+	t.Run("dns remoteURL", func(t *testing.T) {
+		cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream:  "docker.io",
+			RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
+		})
+		errs := NewValidator(nil, nil, dnsResolver).Do(&cfg)
+		validateResult(t, field.ErrorList{
+			field.Invalid(remoteURLFieldPath, ptr.To("https://registry-not-existing.not-exists.io"), "remoteURL is not DNS resolvable"),
+		}, errs)
+	})
+
+	t.Run("secret validity", func(t *testing.T) {
+		t.Run("non existent", func(t *testing.T) {
+			cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To("non-existent-secret"),
-			}),
-			errorsList: field.ErrorList{
+			})
+			errs := NewValidator(nil, nil, dnsResolverAlwaysTrue).Do(&cfg)
+			validateResult(t, field.ErrorList{
 				field.Invalid(fieldPathSpec("secretReferenceName"), "non-existent-secret", "secret does not exist"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name:    "secret with invalid structure",
-			secrets: []v1.Secret{secretWithIncorrectStructure},
-			RegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			}, errs)
+		})
+		t.Run("invalid structure", func(t *testing.T) {
+			cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To(secretWithIncorrectStructure.Name),
-			}),
-			errorsList: field.ErrorList{
+			})
+			errs := NewValidator([]v1.Secret{secretWithIncorrectStructure}, nil, dnsResolverAlwaysTrue).Do(&cfg)
+			validateResult(t, field.ErrorList{
 				field.Invalid(fieldPathSpec("secretReferenceName"), secretWithIncorrectStructure.Name, "two data entries"),
 				field.Invalid(fieldPathSpec("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"username\" data entry"),
 				field.Invalid(fieldPathSpec("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"password\" data entry"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name:    "mutable secret",
-			secrets: []v1.Secret{mutableSecret},
-			RegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			}, errs)
+		})
+		t.Run("mutable secret", func(t *testing.T) {
+			cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To(mutableSecret.Name),
-			}),
-			errorsList: field.ErrorList{
+			})
+			errs := NewValidator([]v1.Secret{mutableSecret}, nil, dnsResolverAlwaysTrue).Do(&cfg)
+			validateResult(t, field.ErrorList{
 				field.Invalid(fieldPathSpec("secretReferenceName"), mutableSecret.Name, "should be immutable"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			errs := NewValidator(tt.secrets, tt.existingConfigs, tt.dnsValidator).Do(&tt.RegistryCacheConfig)
-			validateResult(t, tt.errorsList, errs)
+			}, errs)
 		})
-	}
+	})
 }
 
 func TestDoOnUpdate(t *testing.T) {
+	// Field paths
 	volumeSizeFieldPath := fieldPathSpec("volume", "size")
 	volumeStorageClassNameFieldPath := fieldPathSpec("volume", "storageClassName")
 	garbageCollectionTTLFieldPath := fieldPathSpec("garbageCollection", "ttl")
 
+	// Secrets
 	validSecret := buildSecret(
 		"valid-secret", "default", true,
 		map[string][]byte{"username": []byte("user"), "password": []byte("password")},
@@ -209,6 +193,7 @@ func TestDoOnUpdate(t *testing.T) {
 		map[string][]byte{"username": []byte("user"), "password": []byte("password")},
 	)
 
+	// DNS mocks
 	dnsResolverAlwaysTrue := &mocks.DNSValidator{}
 	dnsResolverAlwaysTrue.On("IsResolvable", mock.Anything).Return(true)
 
@@ -217,203 +202,154 @@ func TestDoOnUpdate(t *testing.T) {
 	dnsResolver.On("IsResolvable", "registry-not-existing.not-exists.io").Return(false)
 	dnsResolver.On("IsResolvable", "some.incorrect.repo.io").Return(false)
 
-	for _, tt := range []struct {
-		name                   string
-		newRegistryCacheConfig registrycache.RegistryCacheConfig
-		oldRegistryCacheConfig registrycache.RegistryCacheConfig
-		existingConfigs        []registrycache.RegistryCacheConfig
-		errorsList             field.ErrorList
-		secrets                []v1.Secret
-		dnsValidator           DNSValidator
-	}{
-		{
-			name: "valid spec",
-			oldRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "docker.io",
-			}),
-			newRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+	t.Run("happy path", func(t *testing.T) {
+		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "docker.io",
+		})
+		newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream:            "docker.io",
+			SecretReferenceName: ptr.To(validSecret.Name),
+		})
+		errs := NewValidator([]v1.Secret{validSecret}, []registrycache.RegistryCacheConfig{
+			buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{Upstream: "docker.io"}),
+		}, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
+		validateResult(t, field.ErrorList{}, errs)
+	})
+
+	t.Run("spec emptiness", func(t *testing.T) {
+		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "quay.io",
+		})
+		newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{})
+		errs := NewValidator(nil, nil, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
+		validateResult(t, field.ErrorList{
+			field.Required(field.NewPath("spec"), "spec must not be empty"),
+		}, errs)
+	})
+
+	t.Run("immutability and garbage collection enabling", func(t *testing.T) {
+		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Volume: &registrycache.Volume{
+				Size:             ptr.To(resource.MustParse("10Gi")),
+				StorageClassName: ptr.To("standard"),
+			},
+			GarbageCollection: &registrycache.GarbageCollection{
+				TTL: metav1.Duration{Duration: 0},
+			},
+		})
+		newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Volume: &registrycache.Volume{
+				Size:             ptr.To(resource.MustParse(NewVolumeSize)),
+				StorageClassName: ptr.To(NewStorageClassName),
+			},
+			GarbageCollection: &registrycache.GarbageCollection{
+				TTL: metav1.Duration{Duration: 1 * time.Hour},
+			},
+		})
+		errs := NewValidator(nil, nil, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
+		validateResult(t, field.ErrorList{
+			field.Invalid(volumeSizeFieldPath, NewVolumeSize, "field is immutable"),
+			field.Invalid(volumeStorageClassNameFieldPath, ptr.To(NewStorageClassName), "field is immutable"),
+			field.Invalid(garbageCollectionTTLFieldPath, &registrycacheext.GarbageCollection{
+				TTL: metav1.Duration{Duration: 1 * time.Hour},
+			}, "garbage collection cannot be enabled"),
+		}, errs)
+	})
+
+	t.Run("uniqueness", func(t *testing.T) {
+		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "quay.io",
+		})
+		newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "docker.io",
+		})
+		existing := []registrycache.RegistryCacheConfig{
+			buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{Upstream: "quay.io"}),
+			buildConfig("config2", "default", registrycache.RegistryCacheConfigSpec{Upstream: "docker.io"}),
+		}
+		errs := NewValidator(nil, existing, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
+		validateResult(t, field.ErrorList{
+			field.Duplicate(fieldPathSpec("upstream"), "docker.io"),
+		}, errs)
+	})
+
+	t.Run("dns upstream", func(t *testing.T) {
+		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "quay.io",
+		})
+		newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "some.incorrect.repo.io",
+		})
+		errs := NewValidator([]v1.Secret{}, []registrycache.RegistryCacheConfig{
+			buildConfig("", "", registrycache.RegistryCacheConfigSpec{Upstream: "docker.io"}),
+		}, dnsResolver).DoOnUpdate(&newCfg, &oldCfg)
+		validateResult(t, field.ErrorList{
+			field.Invalid(fieldPathSpec("upstream"), "some.incorrect.repo.io", "upstream is not DNS resolvable"),
+		}, errs)
+	})
+
+	t.Run("dns remoteURL", func(t *testing.T) {
+		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream: "quay.io",
+		})
+		newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			Upstream:  "docker.io",
+			RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
+		})
+		errs := NewValidator(nil, []registrycache.RegistryCacheConfig{
+			buildConfig("", "", registrycache.RegistryCacheConfigSpec{Upstream: "quay.io"}),
+		}, dnsResolver).DoOnUpdate(&newCfg, &oldCfg)
+		validateResult(t, field.ErrorList{
+			field.Invalid(fieldPathSpec("remoteURL"), ptr.To("https://registry-not-existing.not-exists.io"), "remoteURL is not DNS resolvable"),
+		}, errs)
+	})
+
+	t.Run("secret validity", func(t *testing.T) {
+		t.Run("non existent", func(t *testing.T) {
+			oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To(validSecret.Name),
-			}),
-			errorsList:   field.ErrorList{},
-			dnsValidator: dnsResolverAlwaysTrue,
-			existingConfigs: []registrycache.RegistryCacheConfig{
-				buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-					Upstream: "docker.io",
-				}),
-			},
-			secrets: []v1.Secret{validSecret},
-		},
-		{
-			name: "empty spec",
-			oldRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "quay.io",
-			}),
-			newRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{}),
-			errorsList: field.ErrorList{
-				field.Required(field.NewPath("spec"), "spec must not be empty"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name: "invalid spec",
-			oldRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Volume: &registrycache.Volume{
-					Size:             ptr.To(resource.MustParse("10Gi")),
-					StorageClassName: ptr.To("standard"),
-				},
-				GarbageCollection: &registrycache.GarbageCollection{
-					TTL: metav1.Duration{Duration: 0},
-				},
-			}),
-			newRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Volume: &registrycache.Volume{
-					Size:             ptr.To(resource.MustParse(NewVolumeSize)),
-					StorageClassName: ptr.To(NewStorageClassName),
-				},
-				GarbageCollection: &registrycache.GarbageCollection{
-					TTL: metav1.Duration{Duration: 1 * time.Hour},
-				},
-			}),
-			errorsList: field.ErrorList{
-				field.Invalid(volumeSizeFieldPath, NewVolumeSize, "field is immutable"),
-				field.Invalid(volumeStorageClassNameFieldPath, ptr.To(NewStorageClassName), "field is immutable"),
-				field.Invalid(garbageCollectionTTLFieldPath, &registrycacheext.GarbageCollection{
-					TTL: metav1.Duration{Duration: 1 * time.Hour},
-				}, "garbage collection cannot be enabled"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name: "non existent secret reference name",
-			oldRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:            "docker.io",
-				SecretReferenceName: ptr.To(validSecret.Name),
-			}),
-			newRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
+			})
+			newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To("non-existent-secret"),
-			}),
-			errorsList: field.ErrorList{
+			})
+			errs := NewValidator([]v1.Secret{validSecret}, nil, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
+			validateResult(t, field.ErrorList{
 				field.Invalid(fieldPathSpec("secretReferenceName"), "non-existent-secret", "secret does not exist"),
-			},
-			secrets:      []v1.Secret{validSecret},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name: "duplicated upstream",
-			oldRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "quay.io",
-			}),
-			newRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "docker.io",
-			}),
-			existingConfigs: []registrycache.RegistryCacheConfig{
-				buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-					Upstream: "quay.io",
-				}),
-				buildConfig("config2", "default", registrycache.RegistryCacheConfigSpec{
-					Upstream: "docker.io",
-				}),
-			},
-			errorsList: field.ErrorList{
-				field.Duplicate(fieldPathSpec("upstream"), "docker.io"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name: "upstream non-resolvable",
-			oldRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "quay.io",
-			}),
-			newRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "some.incorrect.repo.io",
-			}),
-			existingConfigs: []registrycache.RegistryCacheConfig{
-				buildConfig("", "", registrycache.RegistryCacheConfigSpec{
-					Upstream: "docker.io",
-				}),
-			},
-			errorsList: field.ErrorList{
-				field.Invalid(fieldPathSpec("upstream"), "some.incorrect.repo.io", "upstream is not DNS resolvable"),
-			},
-			dnsValidator: dnsResolver,
-		},
-		{
-			name: "remoteURL non-resolvable",
-			oldRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream: "quay.io",
-			}),
-			newRegistryCacheConfig: buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:  "docker.io",
-				RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
-			}),
-			existingConfigs: []registrycache.RegistryCacheConfig{
-				buildConfig("", "", registrycache.RegistryCacheConfigSpec{
-					Upstream: "quay.io",
-				}),
-			},
-			errorsList: field.ErrorList{
-				field.Invalid(fieldPathSpec("remoteURL"), ptr.To("https://registry-not-existing.not-exists.io"), "remoteURL is not DNS resolvable"),
-			},
-			dnsValidator: dnsResolver,
-		},
-		{
-			name: "non existent secret reference name",
-			oldRegistryCacheConfig: buildConfig("config", "default", registrycache.RegistryCacheConfigSpec{
+			}, errs)
+		})
+		t.Run("invalid structure", func(t *testing.T) {
+			oldCfg := buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To(validSecret.Name),
-			}),
-			newRegistryCacheConfig: buildConfig("config", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:            "docker.io",
-				SecretReferenceName: ptr.To("non-existent-secret"),
-			}),
-			errorsList: field.ErrorList{
-				field.Invalid(fieldPathSpec("secretReferenceName"), "non-existent-secret", "secret does not exist"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name:    "secret with invalid structure",
-			secrets: []v1.Secret{secretWithIncorrectStructure},
-			oldRegistryCacheConfig: buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:            "docker.io",
-				SecretReferenceName: ptr.To(validSecret.Name),
-			}),
-			newRegistryCacheConfig: buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
+			})
+			newCfg := buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To(secretWithIncorrectStructure.Name),
-			}),
-			errorsList: field.ErrorList{
+			})
+			errs := NewValidator([]v1.Secret{secretWithIncorrectStructure}, nil, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
+			validateResult(t, field.ErrorList{
 				field.Invalid(fieldPathSpec("secretReferenceName"), secretWithIncorrectStructure.Name, "two data entries"),
 				field.Invalid(fieldPathSpec("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"username\" data entry"),
 				field.Invalid(fieldPathSpec("secretReferenceName"), secretWithIncorrectStructure.Name, "missing \"password\" data entry"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-		{
-			name:    "mutable secret",
-			secrets: []v1.Secret{validSecret, mutableSecret},
-			oldRegistryCacheConfig: buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
+			}, errs)
+		})
+		t.Run("mutable secret", func(t *testing.T) {
+			oldCfg := buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To(validSecret.Name),
-			}),
-			newRegistryCacheConfig: buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
+			})
+			newCfg := buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",
 				SecretReferenceName: ptr.To(mutableSecret.Name),
-			}),
-			errorsList: field.ErrorList{
+			})
+			errs := NewValidator([]v1.Secret{validSecret, mutableSecret}, nil, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
+			validateResult(t, field.ErrorList{
 				field.Invalid(fieldPathSpec("secretReferenceName"), mutableSecret.Name, "should be immutable"),
-			},
-			dnsValidator: dnsResolverAlwaysTrue,
-		},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			errs := NewValidator(tt.secrets, tt.existingConfigs, tt.dnsValidator).DoOnUpdate(&tt.newRegistryCacheConfig, &tt.oldRegistryCacheConfig)
-
-			validateResult(t, tt.errorsList, errs)
+			}, errs)
 		})
-	}
+	})
 }
 
 func fieldPathSpec(parts ...string) *field.Path {

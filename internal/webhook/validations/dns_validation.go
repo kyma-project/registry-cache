@@ -16,8 +16,6 @@ type DNSValidator interface {
 
 // RealDNSValidator is the production implementation using the net.Resolver.
 type DefaultDNSValidator struct {
-	// optional custom resolver; if nil, defaults to net.DefaultResolver
-	Resolver *net.Resolver
 	// optional timeout per lookup; defaults to 2s if zero
 	Timeout time.Duration
 }
@@ -26,10 +24,8 @@ func (r DefaultDNSValidator) IsResolvable(host string) bool {
 	if host == "" {
 		return false
 	}
-	res := r.Resolver
-	if res == nil {
-		res = net.DefaultResolver
-	}
+	res := net.DefaultResolver
+
 	timeout := r.Timeout
 	if timeout == 0 {
 		timeout = 2 * time.Second

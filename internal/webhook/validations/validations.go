@@ -43,45 +43,10 @@ func (v Validator) Do(newConfig *registrycache.RegistryCacheConfig) field.ErrorL
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, gardenerValidations...)
 
-	if newConfig.Spec.SecretReferenceName != nil {
-		secretIndex := slices.IndexFunc(v.secrets, func(secret v1.Secret) bool {
-			return secret.Name == *newConfig.Spec.SecretReferenceName && secret.Namespace == newConfig.Namespace
-		})
-
-		if secretIndex == -1 {
-			errMsg := fmt.Sprintf("referenced secret does not exist: %v", *newConfig.Spec.SecretReferenceName)
-
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName, errMsg))
-		} else {
-			secret := v.secrets[secretIndex]
-			secretErrors := registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)
-			if len(secretErrors) > 0 {
-				allErrs = append(allErrs, secretErrors...)
-			}
-		}
-	}
-
-	for _, existingConfig := range v.existingConfigs {
-		if existingConfig.Spec.Upstream == newConfig.Spec.Upstream {
-			appendedErr := field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream)
-			allErrs = append(allErrs, appendedErr)
-		}
-	}
-
-	if u := newConfig.Spec.Upstream; u != "" {
-		if v.dns != nil && !v.dns.IsResolvable(u) {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("upstream"), u, "upstream is not DNS resolvable"))
-		}
-	}
-
-	if newConfig.Spec.RemoteURL != nil {
-		if parsed, err := url.Parse(*newConfig.Spec.RemoteURL); err == nil {
-			host := parsed.Hostname()
-			if host != "" && v.dns != nil && !v.dns.IsResolvable(host) {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("remoteURL"), newConfig.Spec.RemoteURL, "remoteURL is not DNS resolvable"))
-			}
-		}
-	}
+	allErrs = append(allErrs, validateUpstreamUniqueness(newConfig, v.existingConfigs)...)
+	allErrs = append(allErrs, validateUpstreamResolvability(newConfig, v.dns)...)
+	allErrs = append(allErrs, validateRemoteURLResolvability(newConfig, v.dns)...)
+	allErrs = append(allErrs, validateSecretReferenceName(newConfig, v.secrets)...)
 
 	return allErrs
 }
@@ -183,6 +148,68 @@ func toExtensionCache(c registrycache.RegistryCacheConfigSpec) registrycacheext.
 	}
 
 	return ext
+}
+
+func validateUpstreamUniqueness(newConfig *registrycache.RegistryCacheConfig, existingConfigs []registrycache.RegistryCacheConfig) field.ErrorList {
+	var allErrs field.ErrorList
+
+	for _, existingConfig := range existingConfigs {
+		if existingConfig.Spec.Upstream == newConfig.Spec.Upstream {
+			appendedErr := field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream)
+			allErrs = append(allErrs, appendedErr)
+		}
+	}
+
+	return allErrs
+}
+
+func validateUpstreamResolvability(newConfig *registrycache.RegistryCacheConfig, dns DNSValidator) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if u := newConfig.Spec.Upstream; u != "" {
+		if dns != nil && !dns.IsResolvable(u) {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("upstream"), u, "upstream is not DNS resolvable"))
+		}
+	}
+
+	return allErrs
+}
+
+func validateRemoteURLResolvability(newConfig *registrycache.RegistryCacheConfig, dns DNSValidator) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if newConfig.Spec.RemoteURL != nil {
+		if parsed, err := url.Parse(*newConfig.Spec.RemoteURL); err == nil {
+			host := parsed.Hostname()
+			if host != "" && dns != nil && !dns.IsResolvable(host) {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("remoteURL"), newConfig.Spec.RemoteURL, "remoteURL is not DNS resolvable"))
+			}
+		}
+	}
+
+	return allErrs
+}
+
+func validateSecretReferenceName(newConfig *registrycache.RegistryCacheConfig, secrets []v1.Secret) field.ErrorList {
+	var allErrs field.ErrorList
+
+	if newConfig.Spec.SecretReferenceName != nil {
+		secretIndex := slices.IndexFunc(secrets, func(secret v1.Secret) bool {
+			return secret.Name == *newConfig.Spec.SecretReferenceName && secret.Namespace == newConfig.Namespace
+		})
+		if secretIndex == -1 {
+			errMsg := fmt.Sprintf("referenced secret does not exist: %v", *newConfig.Spec.SecretReferenceName)
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName, errMsg))
+		} else {
+			secret := secrets[secretIndex]
+			secretErrors := registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)
+			if len(secretErrors) > 0 {
+				allErrs = append(allErrs, secretErrors...)
+			}
+		}
+	}
+
+	return allErrs
 }
 
 func isEmptySpec(s registrycache.RegistryCacheConfigSpec) bool {

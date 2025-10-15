@@ -14,7 +14,7 @@ type DNSValidator interface {
 	IsResolvable(host string) bool
 }
 
-// RealDNSValidator is the production implementation using the net.Resolver.
+// DefaultDNSValidator implements DNSValidator using the net.Resolver to check host resolvability.
 type DefaultDNSValidator struct {
 	// optional timeout per lookup; defaults to 2s if zero
 	Timeout time.Duration

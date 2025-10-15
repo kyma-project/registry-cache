@@ -1,6 +1,12 @@
 package validations
 
 import (
+	"reflect"
+	"slices"
+	"strings"
+	"testing"
+	"time"
+
 	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
 	registrycache "github.com/kyma-project/registry-cache/api/v1beta1"
 	"github.com/kyma-project/registry-cache/internal/webhook/validations/mocks"
@@ -11,11 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
-	"reflect"
-	"slices"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (

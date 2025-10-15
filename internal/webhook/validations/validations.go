@@ -1,16 +1,17 @@
 package validations
 
 import (
+	"net"
+	"net/url"
+	"slices"
+	"strings"
+
 	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
 	registrycacheextvalidations "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry/validation"
 	registrycache "github.com/kyma-project/registry-cache/api/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"net"
-	"net/url"
-	"slices"
-	"strings"
 )
 
 // Validator validates RegistryCacheConfig resources.
@@ -61,7 +62,7 @@ func (v Validator) validateCommon(newConfig *registrycache.RegistryCacheConfig) 
 	allErrs = append(allErrs, validateUpstreamUniqueness(newConfig, v.existingConfigs)...)
 	allErrs = append(allErrs, validateUpstreamResolvability(newConfig, v.dns)...)
 	allErrs = append(allErrs, validateRemoteURLResolvability(newConfig, v.dns)...)
-	allErrs = append(allErrs, validateSecretReferenceName(newConfig, v.secrets)...)
+	allErrs = append(allErrs, validateSecretReference(newConfig, v.secrets)...)
 
 	return allErrs
 }
@@ -118,8 +119,7 @@ func validateUpstreamUniqueness(newConfig *registrycache.RegistryCacheConfig, ex
 		}
 
 		if existingConfig.Spec.Upstream == newConfig.Spec.Upstream {
-			appendedErr := field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream)
-			allErrs = append(allErrs, appendedErr)
+			allErrs = append(allErrs, field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream))
 			break
 		}
 	}
@@ -155,7 +155,7 @@ func validateRemoteURLResolvability(newConfig *registrycache.RegistryCacheConfig
 	return allErrs
 }
 
-func validateSecretReferenceName(newConfig *registrycache.RegistryCacheConfig, secrets []v1.Secret) field.ErrorList {
+func validateSecretReference(newConfig *registrycache.RegistryCacheConfig, secrets []v1.Secret) field.ErrorList {
 	var allErrs field.ErrorList
 
 	if newConfig.Spec.SecretReferenceName != nil {
@@ -169,10 +169,8 @@ func validateSecretReferenceName(newConfig *registrycache.RegistryCacheConfig, s
 			)
 		} else {
 			secret := secrets[secretIndex]
-			secretErrors := registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)
-			if len(secretErrors) > 0 {
-				allErrs = append(allErrs, secretErrors...)
-			}
+			allErrs = append(allErrs,
+				registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)...)
 		}
 	}
 
@@ -219,7 +217,6 @@ func stripPort(s string) string {
 	if h, _, err := net.SplitHostPort(s); err == nil && h != "" {
 		return h
 	}
-	// Fallback: manual split on first colon if there is exactly one colon (avoid cutting IPv6 literals without brackets)
 	if strings.Count(s, ":") == 1 {
 		if idx := strings.IndexByte(s, ':'); idx > 0 {
 			return s[:idx]

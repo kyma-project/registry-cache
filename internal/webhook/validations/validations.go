@@ -43,10 +43,7 @@ func (v Validator) Do(newConfig *registrycache.RegistryCacheConfig) field.ErrorL
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, gardenerValidations...)
 
-	allErrs = append(allErrs, validateUpstreamUniqueness(newConfig, v.existingConfigs)...)
-	allErrs = append(allErrs, validateUpstreamResolvability(newConfig, v.dns)...)
-	allErrs = append(allErrs, validateRemoteURLResolvability(newConfig, v.dns)...)
-	allErrs = append(allErrs, validateSecretReferenceName(newConfig, v.secrets)...)
+	allErrs = append(allErrs, v.validateCommon(newConfig)...)
 
 	return allErrs
 }
@@ -63,6 +60,14 @@ func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheC
 
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, gardenerValidations...)
+
+	allErrs = append(allErrs, v.validateCommon(newConfig)...)
+
+	return allErrs
+}
+
+func (v Validator) validateCommon(newConfig *registrycache.RegistryCacheConfig) field.ErrorList {
+	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, validateUpstreamUniqueness(newConfig, v.existingConfigs)...)
 	allErrs = append(allErrs, validateUpstreamResolvability(newConfig, v.dns)...)

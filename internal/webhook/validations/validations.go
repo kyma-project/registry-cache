@@ -7,6 +7,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"net"
 	"net/url"
 	"slices"
 	"strings"
@@ -130,7 +131,8 @@ func validateUpstreamResolvability(newConfig *registrycache.RegistryCacheConfig,
 	var allErrs field.ErrorList
 
 	if u := newConfig.Spec.Upstream; u != "" {
-		if dns != nil && !dns.IsResolvable(u) {
+		host := stripPort(u)
+		if dns != nil && host != "" && !dns.IsResolvable(host) {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("upstream"), u, "upstream is not DNS resolvable"))
 		}
 	}
@@ -209,4 +211,19 @@ func adjustPath(extensionPath string) string {
 	partsExtracted := append(parts[:1], parts[2:]...)
 
 	return strings.Join(partsExtracted, ".")
+}
+
+// stripPort returns the host part without port if a port is present.
+// Accepts host:port, [ipv6]:port, or returns the original string if it cannot parse.
+func stripPort(s string) string {
+	if h, _, err := net.SplitHostPort(s); err == nil && h != "" {
+		return h
+	}
+	// Fallback: manual split on first colon if there is exactly one colon (avoid cutting IPv6 literals without brackets)
+	if strings.Count(s, ":") == 1 {
+		if idx := strings.IndexByte(s, ':'); idx > 0 {
+			return s[:idx]
+		}
+	}
+	return s
 }

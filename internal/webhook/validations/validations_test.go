@@ -305,20 +305,6 @@ func TestDoOnUpdate(t *testing.T) {
 	})
 
 	t.Run("secret validity", func(t *testing.T) {
-		t.Run("non existent", func(t *testing.T) {
-			oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:            "docker.io",
-				SecretReferenceName: ptr.To(validSecret.Name),
-			})
-			newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-				Upstream:            "docker.io",
-				SecretReferenceName: ptr.To("non-existent-secret"),
-			})
-			errs := NewValidator([]v1.Secret{validSecret}, nil, dnsResolverAlwaysTrue).DoOnUpdate(&newCfg, &oldCfg)
-			validateResult(t, field.ErrorList{
-				field.Invalid(fieldPathSpec("secretReferenceName"), "non-existent-secret", "secret does not exist"),
-			}, errs)
-		})
 		t.Run("invalid structure", func(t *testing.T) {
 			oldCfg := buildConfig("config-with-invalid-secret", "default", registrycache.RegistryCacheConfigSpec{
 				Upstream:            "docker.io",

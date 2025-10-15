@@ -92,6 +92,10 @@ func TestDo(t *testing.T) {
 		{
 			name: "empty spec",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{},
 			},
 			errorsList: field.ErrorList{
@@ -102,6 +106,10 @@ func TestDo(t *testing.T) {
 		{
 			name: "invalid spec",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:  InvalidUpstreamPort,
 					RemoteURL: ptr.To(InvalidRemoteURL),
@@ -132,12 +140,20 @@ func TestDo(t *testing.T) {
 		{
 			name: "duplicated upstream",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config2",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "docker.io",
 				},
 			},
 			existingConfigs: []registrycache.RegistryCacheConfig{
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "config1",
+						Namespace: "default",
+					},
 					Spec: registrycache.RegistryCacheConfigSpec{
 						Upstream: "docker.io",
 					},
@@ -151,6 +167,10 @@ func TestDo(t *testing.T) {
 		{
 			name: "upstream non-resolvable",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "some.incorrect.repo.io",
 				},
@@ -164,6 +184,10 @@ func TestDo(t *testing.T) {
 		{
 			name: "remote url non-resolvable",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:  "docker.io",
 					RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
@@ -178,6 +202,10 @@ func TestDo(t *testing.T) {
 		{
 			name: "non existent secret reference name",
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:            "docker.io",
 					SecretReferenceName: ptr.To("non-existent-secret"),
@@ -193,7 +221,7 @@ func TestDo(t *testing.T) {
 			secrets: []v1.Secret{secretWithIncorrectStructure},
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "config-with-invalid-secret",
+					Name:      "config1",
 					Namespace: "default",
 				},
 				Spec: registrycache.RegistryCacheConfigSpec{
@@ -213,7 +241,7 @@ func TestDo(t *testing.T) {
 			secrets: []v1.Secret{mutableSecret},
 			RegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "config-with-invalid-secret",
+					Name:      "config1",
 					Namespace: "default",
 				},
 				Spec: registrycache.RegistryCacheConfigSpec{
@@ -297,7 +325,7 @@ func TestDoOnUpdate(t *testing.T) {
 			name: "valid spec",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "config",
+					Name:      "config1",
 					Namespace: "default",
 				},
 				Spec: registrycache.RegistryCacheConfigSpec{
@@ -306,7 +334,7 @@ func TestDoOnUpdate(t *testing.T) {
 			},
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "config",
+					Name:      "config1",
 					Namespace: "default",
 				},
 				Spec: registrycache.RegistryCacheConfigSpec{
@@ -319,7 +347,7 @@ func TestDoOnUpdate(t *testing.T) {
 			existingConfigs: []registrycache.RegistryCacheConfig{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "config",
+						Name:      "config1",
 						Namespace: "default",
 					},
 					Spec: registrycache.RegistryCacheConfigSpec{
@@ -332,11 +360,19 @@ func TestDoOnUpdate(t *testing.T) {
 		{
 			name: "empty spec",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "quay.io",
 				},
 			},
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{},
 			},
 			errorsList: field.ErrorList{
@@ -347,6 +383,10 @@ func TestDoOnUpdate(t *testing.T) {
 		{
 			name: "invalid spec",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Volume: &registrycache.Volume{
 						Size:             ptr.To(resource.MustParse("10Gi")),
@@ -358,6 +398,10 @@ func TestDoOnUpdate(t *testing.T) {
 				},
 			},
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Volume: &registrycache.Volume{
 						Size:             ptr.To(resource.MustParse(NewVolumeSize)),
@@ -380,12 +424,20 @@ func TestDoOnUpdate(t *testing.T) {
 		{
 			name: "non existent secret reference name",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:            "docker.io",
 					SecretReferenceName: ptr.To(validSecret.Name),
 				},
 			},
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:            "docker.io",
 					SecretReferenceName: ptr.To("non-existent-secret"),
@@ -447,11 +499,19 @@ func TestDoOnUpdate(t *testing.T) {
 		{
 			name: "upstream non-resolvable",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "quay.io",
 				},
 			},
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "some.incorrect.repo.io",
 				},
@@ -471,12 +531,19 @@ func TestDoOnUpdate(t *testing.T) {
 		{
 			name: "remoteURL non-resolvable",
 			oldRegistryCacheConfig: registrycache.RegistryCacheConfig{
-
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream: "quay.io",
 				},
 			},
 			newRegistryCacheConfig: registrycache.RegistryCacheConfig{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "config1",
+					Namespace: "default",
+				},
 				Spec: registrycache.RegistryCacheConfigSpec{
 					Upstream:  "docker.io",
 					RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),

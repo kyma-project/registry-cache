@@ -116,14 +116,6 @@ func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, o
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.
-func (v *RegistryCacheConfigCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	registrycacheconfig, ok := obj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
-	if !ok {
-		return nil, fmt.Errorf("expected a RegistryCacheConfig object but got %T", obj)
-	}
-	registrycacheconfiglog.Info("Validation for RegistryCacheConfig upon deletion", "name", registrycacheconfig.GetName())
-
-	// TODO(user): fill in your validation logic upon object deletion.
-
+func (v *RegistryCacheConfigCustomValidator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }

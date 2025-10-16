@@ -15,11 +15,10 @@ import (
 )
 
 // Validator validates RegistryCacheConfig resources.
-// Add a DNS validator to make DNS checks testable.
 type Validator struct {
 	secrets         []v1.Secret
 	existingConfigs []registrycache.RegistryCacheConfig
-	dns             DNSValidator
+	dnsValidator    DNSValidator
 }
 
 // NewValidator constructs a Validator with provided secrets and existing configs.
@@ -28,7 +27,7 @@ func NewValidator(secrets []v1.Secret, existing []registrycache.RegistryCacheCon
 	return Validator{
 		secrets:         secrets,
 		existingConfigs: existing,
-		dns:             dnsValidator,
+		dnsValidator:    dnsValidator,
 	}
 }
 
@@ -60,8 +59,8 @@ func (v Validator) validateCommon(newConfig *registrycache.RegistryCacheConfig) 
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, validateUpstreamUniqueness(newConfig, v.existingConfigs)...)
-	allErrs = append(allErrs, validateUpstreamResolvability(newConfig, v.dns)...)
-	allErrs = append(allErrs, validateRemoteURLResolvability(newConfig, v.dns)...)
+	allErrs = append(allErrs, validateUpstreamResolvability(newConfig, v.dnsValidator)...)
+	allErrs = append(allErrs, validateRemoteURLResolvability(newConfig, v.dnsValidator)...)
 	allErrs = append(allErrs, validateSecretReference(newConfig, v.secrets)...)
 
 	return allErrs
@@ -211,8 +210,6 @@ func adjustPath(extensionPath string) string {
 	return strings.Join(partsExtracted, ".")
 }
 
-// stripPort returns the host part without port if a port is present.
-// Accepts host:port, [ipv6]:port, or returns the original string if it cannot parse.
 func stripPort(s string) string {
 	if h, _, err := net.SplitHostPort(s); err == nil && h != "" {
 		return h

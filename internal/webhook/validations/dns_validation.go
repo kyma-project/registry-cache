@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// DNSValidation defines DNS resolvability checks used by the validator.
+// DNSValidator defines DNS resolvability checks used by the validator.
 //
 //go:generate mockery --name=DNSValidator
 type DNSValidator interface {
@@ -33,7 +33,6 @@ func (r DefaultDNSValidator) IsResolvable(host string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// Try lookup; any result counts as resolvable.
 	if addrs, err := res.LookupHost(ctx, host); err == nil && len(addrs) > 0 {
 		return true
 	}

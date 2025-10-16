@@ -140,7 +140,7 @@ func TestDo(t *testing.T) {
 		}, errs)
 	})
 
-	t.Run("dns upstream", func(t *testing.T) {
+	t.Run("upstream not resolvable", func(t *testing.T) {
 		cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 			Upstream: "some.incorrect.repo.io",
 		})
@@ -150,7 +150,7 @@ func TestDo(t *testing.T) {
 		}, errs)
 	})
 
-	t.Run("dns remoteURL", func(t *testing.T) {
+	t.Run("remoteURL not resolvable", func(t *testing.T) {
 		cfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 			Upstream:  "docker.io",
 			RemoteURL: ptr.To("https://registry-not-existing.not-exists.io"),
@@ -202,7 +202,8 @@ func TestDoOnUpdate(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
-			Upstream: "docker.io",
+			Upstream:  "docker.io",
+			RemoteURL: ptr.To("https://registry-1.docker.io"),
 		})
 		newCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 			Upstream:            "docker.io",
@@ -271,7 +272,7 @@ func TestDoOnUpdate(t *testing.T) {
 		}, errs)
 	})
 
-	t.Run("dns upstream", func(t *testing.T) {
+	t.Run("upstream not resolvable", func(t *testing.T) {
 		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 			Upstream: "quay.io",
 		})
@@ -286,7 +287,7 @@ func TestDoOnUpdate(t *testing.T) {
 		}, errs)
 	})
 
-	t.Run("dns remoteURL", func(t *testing.T) {
+	t.Run("remoteURL not resolvable", func(t *testing.T) {
 		oldCfg := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{
 			Upstream: "quay.io",
 		})

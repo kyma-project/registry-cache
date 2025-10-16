@@ -1,6 +1,7 @@
 package validations
 
 import (
+	"fmt"
 	"net"
 	"net/url"
 	"slices"
@@ -164,8 +165,7 @@ func validateSecretReference(newConfig *registrycache.RegistryCacheConfig, secre
 		if secretIndex == -1 {
 			allErrs = append(allErrs,
 				field.Invalid(field.NewPath("spec").Child("secretReferenceName"),
-					*newConfig.Spec.SecretReferenceName, "secret does not exist"),
-			)
+					*newConfig.Spec.SecretReferenceName, fmt.Sprintf("secret %s does not exist", *newConfig.Spec.SecretReferenceName)))
 		} else {
 			secret := secrets[secretIndex]
 			allErrs = append(allErrs,

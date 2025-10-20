@@ -21,6 +21,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,6 +39,11 @@ type RegistryCache struct {
 	Spec   RegistryCacheSpec   `json:"spec,omitempty"`
 	Status RegistryCacheStatus `json:"status,omitempty"`
 }
+
+var (
+	ConditionTypeInstallation = "Installation"
+	ConditionReasonReady      = "Ready"
+)
 
 // RegistryCacheSpec defines the desired state of RegistryCache
 type RegistryCacheSpec struct{}
@@ -82,6 +88,27 @@ type RegistryCacheStatus struct {
 
 func (s *RegistryCacheStatus) WithState(state State) *RegistryCacheStatus {
 	s.State = state
+	return s
+}
+
+func (s *RegistryCacheStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *RegistryCacheStatus {
+	if s.Conditions == nil {
+		s.Conditions = make([]metav1.Condition, 0, 1)
+	}
+
+	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)
+
+	if condition == nil {
+		condition = &metav1.Condition{
+			Type:    ConditionTypeInstallation,
+			Reason:  ConditionReasonReady,
+			Message: "installation is ready and resources can be used",
+		}
+	}
+
+	condition.Status = status
+	condition.ObservedGeneration = objGeneration
+	meta.SetStatusCondition(&s.Conditions, *condition)
 	return s
 }
 

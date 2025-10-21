@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/registry-cache/api/v1beta1"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,15 +42,23 @@ const (
 	fieldOwner      = "registry-cache.kyma-project.io/owner"
 )
 
-type RegistryCacheReconciller struct {
+type ManifestResources struct {
+	Items []*unstructured.Unstructured
+	Blobs [][]byte
+}
+
+type RegistryCacheReconciler struct {
 	client.Client
 	*runtime.Scheme
 	record.EventRecorder
 	*rest.Config
+	resourceObjs       *ManifestResources
+	FinalState         v1beta1.State
+	FinalDeletionState v1beta1.State
 }
 
-func NewRegistryCacheReconciller(mgr ctrl.Manager, objects []unstructured.Unstructured) *RegistryCacheReconciller {
-	return &RegistryCacheReconciller{
+func NewRegistryCacheReconciller(mgr ctrl.Manager, objects []unstructured.Unstructured) *RegistryCacheReconciler {
+	return &RegistryCacheReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		//metrics: metrics,
@@ -57,7 +66,7 @@ func NewRegistryCacheReconciller(mgr ctrl.Manager, objects []unstructured.Unstru
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RegistryCacheReconciller) SetupWithManager(mgr ctrl.Manager) error {
+func (r *RegistryCacheReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Config = mgr.GetConfig()
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -71,7 +80,7 @@ func (r *RegistryCacheReconciller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *RegistryCacheReconciller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("Reconciling RegistryCache resource", "namespace", req.Namespace, "name", req.Name)
 
@@ -111,31 +120,25 @@ func getInstanceStatus(objectInstance *v1beta1.RegistryCache) v1beta1.RegistryCa
 	return objectInstance.Status
 }
 
-func (r *RegistryCacheReconciller) processResources(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+func (r *RegistryCacheReconciler) processResources(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
 	logger := log.FromContext(ctx)
-	logger.Info( "Installing Registry Cache resources")
-
-	//resourceObjs, err := getResourcesFromLocalPath(objectInstance.Spec.ResourceFilePath, logger)
-	//if err != nil {
-	//	logger.Error(err, "error locating manifest of resources")
-	//	return fmt.Errorf("error locating manifest of resources: %w", err)
-	//}
+	logger.Info("Installing Registry Cache resources")
 
 	r.Event(objectInstance, "Normal", "ResourcesInstall", "installing resources")
 
 	// the resources to be installed are unstructured,
 	// so please make sure the types are available on the target cluster
-	/*for _, obj := range resourceObjs.Items {
-		if err = r.ssa(ctx, obj); err != nil && !errors2.IsAlreadyExists(err) {
+	for _, obj := range r.resourceObjs.Items {
+		if err := r.ssa(ctx, obj); err != nil && !errors2.IsAlreadyExists(err) {
 			logger.Error(err, "error during installation of resources")
 			return fmt.Errorf("error during installation of resources: %w", err)
 		}
-	}*/
+	}
 	return nil
 }
 
 // HandleInitialState bootstraps state handling for the reconciled resource.
-func (r *RegistryCacheReconciller) HandleInitialState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+func (r *RegistryCacheReconciler) HandleInitialState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
 	status := getInstanceStatus(objectInstance)
 
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
@@ -145,7 +148,7 @@ func (r *RegistryCacheReconciller) HandleInitialState(ctx context.Context, objec
 
 // HandleProcessingState processes the reconciled resource by processing the underlying resources.
 // Based on the processing either a success or failure state is set on the reconciled resource.
-func (r *RegistryCacheReconciller) HandleProcessingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+func (r *RegistryCacheReconciler) HandleProcessingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
 	status := getInstanceStatus(objectInstance)
 
 	if err := r.processResources(ctx, objectInstance); err != nil {
@@ -162,64 +165,52 @@ func (r *RegistryCacheReconciller) HandleProcessingState(ctx context.Context, ob
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
 		WithState(r.FinalState).
-		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))*/
-	return nil
+		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
 // HandleErrorState handles error recovery for the reconciled resource.
-func (r *RegistryCacheReconciller) HandleErrorState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	//_ := getInstanceStatus(objectInstance)
+func (r *RegistryCacheReconciler) HandleErrorState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	status := getInstanceStatus(objectInstance)
 
-	/*if err := r.processResources(ctx, objectInstance); err != nil {
+	if err := r.processResources(ctx, objectInstance); err != nil {
 		return err
 	}
 
 	// stay in Error state if FinalDeletionState is set to Error
-	if !objectInstance.GetDeletionTimestamp().IsZero() && r.FinalDeletionState == v1alpha1.StateError {
+	if !objectInstance.GetDeletionTimestamp().IsZero() && r.FinalDeletionState == v1beta1.StateError {
 		return nil
 	}
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
 		WithState(r.FinalState).
-		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))*/
-
-	return nil
+		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
 // HandleDeletingState processed the deletion on the reconciled resource.
 // Once the deletion if processed the relevant finalizers (if applied) are removed.
-func (r *RegistryCacheReconciller) HandleDeletingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	//r.Event(objectInstance, "Normal", "Deleting", "resource deleting")
-	//logger := log.FromContext(ctx)
+func (r *RegistryCacheReconciler) HandleDeletingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	r.Event(objectInstance, "Normal", "Deleting", "resource deleting")
+	logger := log.FromContext(ctx)
+	status := getInstanceStatus(objectInstance)
 
-	//_ := getInstanceStatus(objectInstance)
-
-	//resourceObjs, err := getResourcesFromLocalPath(objectInstance.Spec.ResourceFilePath, logger)
-	/*if err != nil && controllerutil.RemoveFinalizer(objectInstance, finalizer) {
-		// if error is encountered simply remove the finalizer and delete the reconciled resource
-		if err := r.Update(ctx, objectInstance); err != nil {
-			return fmt.Errorf("error while removing finalizer: %w", err)
-		}
-		return nil
-	}
-	r.Event(objectInstance, "Normal", "ResourcesDelete", "deleting resources")*/
+	r.Event(objectInstance, "Normal", "ResourcesDelete", "deleting resources")
 
 	// the resources to be installed are unstructured,
 	// so please make sure the types are available on the target cluster
-	/*for _, obj := range resourceObjs.Items {
-		if err = r.Delete(ctx, obj); err != nil && !errors2.IsNotFound(err) {
+	for _, obj := range r.resourceObjs.Items {
+		if err := r.Delete(ctx, obj); err != nil && !errors2.IsNotFound(err) {
 			// stay in Deleting state if FinalDeletionState is set to Deleting
-			if !objectInstance.GetDeletionTimestamp().IsZero() && r.FinalDeletionState == v1alpha1.StateDeleting {
+			if !objectInstance.GetDeletionTimestamp().IsZero() && r.FinalDeletionState == v1beta1.StateDeleting {
 				return nil
 			}
 
 			logger.Error(err, "error during uninstallation of resources")
 			r.Event(objectInstance, "Warning", "ResourcesDelete", "deleting resources error")
 			return r.setStatusForObjectInstance(ctx, objectInstance, status.
-				WithState(v1alpha1.StateError).
+				WithState(v1beta1.StateError).
 				WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
 		}
-	}*/
+	}
 
 	// if resources are ready to be deleted, remove finalizer
 	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {
@@ -232,24 +223,24 @@ func (r *RegistryCacheReconciller) HandleDeletingState(ctx context.Context, obje
 }
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
-func (r *RegistryCacheReconciller) HandleReadyState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	//status := getInstanceStatus(objectInstance)
-	/*if err := r.processResources(ctx, objectInstance); err != nil {
+func (r *RegistryCacheReconciler) HandleReadyState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	status := getInstanceStatus(objectInstance)
+	if err := r.processResources(ctx, objectInstance); err != nil {
 		// stay in Ready/Warning state if FinalDeletionState is set to Ready/Warning
 		if !objectInstance.GetDeletionTimestamp().IsZero() &&
-			(r.FinalDeletionState == v1alpha1.StateReady || r.FinalDeletionState == v1alpha1.StateWarning) {
+			(r.FinalDeletionState == v1beta1.StateReady || r.FinalDeletionState == v1beta1.StateWarning) {
 			return nil
 		}
 
 		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
 		return r.setStatusForObjectInstance(ctx, objectInstance, status.
-			WithState(v1alpha1.StateError).
+			WithState(v1beta1.StateError).
 			WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
-	}*/
+	}
 	return nil
 }
 
-func (r *RegistryCacheReconciller) setStatusForObjectInstance(ctx context.Context, objectInstance *v1beta1.RegistryCache, status *v1beta1.RegistryCacheStatus) error {
+func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *v1beta1.RegistryCache, status *v1beta1.RegistryCacheStatus) error {
 	objectInstance.Status = *status
 
 	if err := r.ssaStatus(ctx, objectInstance); err != nil {
@@ -263,19 +254,19 @@ func (r *RegistryCacheReconciller) setStatusForObjectInstance(ctx context.Contex
 }
 
 // ssaStatus patches status using SSA on the passed object.
-func (r *RegistryCacheReconciller) ssaStatus(ctx context.Context, obj client.Object) error {
+func (r *RegistryCacheReconciler) ssaStatus(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
 	if err := r.Status().Patch(ctx, obj, client.Apply,
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}}); err != nil {
 		return fmt.Errorf("error while patching status: %w", err)
 	}
-	
+
 	return nil
 }
 
 // ssa patches the object using SSA.
-func (r *RegistryCacheReconciller) ssa(ctx context.Context, obj client.Object) error {
+func (r *RegistryCacheReconciler) ssa(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
 	if err := r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner)); err != nil {

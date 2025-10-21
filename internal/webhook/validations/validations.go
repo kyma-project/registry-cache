@@ -23,7 +23,6 @@ type Validator struct {
 }
 
 // NewValidator constructs a Validator with provided secrets and existing configs.
-// Initialize the DNS validator with a real implementation by default.
 func NewValidator(secrets []v1.Secret, existing []registrycache.RegistryCacheConfig, dnsValidator DNSValidator) Validator {
 	return Validator{
 		secrets:         secrets,
@@ -144,11 +143,16 @@ func validateRemoteURLResolvability(newConfig *registrycache.RegistryCacheConfig
 	var allErrs field.ErrorList
 
 	if newConfig.Spec.RemoteURL != nil {
-		if parsed, err := url.Parse(*newConfig.Spec.RemoteURL); err == nil {
-			host := parsed.Hostname()
-			if host != "" && dns != nil && !dns.IsResolvable(host) {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("remoteURL"), newConfig.Spec.RemoteURL, "remoteURL is not DNS resolvable"))
-			}
+		parsed, err := url.Parse(*newConfig.Spec.RemoteURL)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("remoteURL"), newConfig.Spec.RemoteURL, "failed to parse remoteURL"))
+
+			return allErrs
+		}
+
+		host := parsed.Hostname()
+		if host != "" && dns != nil && !dns.IsResolvable(host) {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("remoteURL"), newConfig.Spec.RemoteURL, "remoteURL is not DNS resolvable"))
 		}
 	}
 

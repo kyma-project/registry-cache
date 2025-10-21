@@ -53,14 +53,15 @@ type RegistryCacheReconciler struct {
 	record.EventRecorder
 	*rest.Config
 	resourceObjs       *ManifestResources
-	FinalState         v1beta1.State
 	FinalDeletionState v1beta1.State
 }
 
 func NewRegistryCacheReconciller(mgr ctrl.Manager, objects []unstructured.Unstructured) *RegistryCacheReconciler {
 	return &RegistryCacheReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		resourceObjs:       &ManifestResources{},
+		FinalDeletionState: v1beta1.StateDeleting,
 		//metrics: metrics,
 	}
 }
@@ -94,6 +95,10 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	status := getInstanceStatus(&instance)
+
+	if !instance.GetDeletionTimestamp().IsZero() && status.State != r.FinalDeletionState {
+		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &instance, status.WithState(r.FinalDeletionState))
+	}
 
 	if instance.GetDeletionTimestamp().IsZero() {
 		if controllerutil.AddFinalizer(&instance, finalizer) {
@@ -164,7 +169,7 @@ func (r *RegistryCacheReconciler) HandleProcessingState(ctx context.Context, obj
 	}
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(r.FinalState).
+		WithState(v1beta1.StateReady).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
@@ -182,7 +187,7 @@ func (r *RegistryCacheReconciler) HandleErrorState(ctx context.Context, objectIn
 	}
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(r.FinalState).
+		WithState(v1beta1.StateReady).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 

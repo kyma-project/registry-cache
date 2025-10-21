@@ -15,25 +15,17 @@ type DNSValidator interface {
 }
 
 // DefaultDNSValidator implements DNSValidator using the net.Resolver to check host resolvability.
-type DefaultDNSValidator struct {
-	// optional timeout per lookup; defaults to 2s if zero
-	Timeout time.Duration
-}
+type DefaultDNSValidator struct{}
 
 func (r DefaultDNSValidator) IsResolvable(host string) bool {
 	if host == "" {
 		return false
 	}
-	res := net.DefaultResolver
 
-	timeout := r.Timeout
-	if timeout == 0 {
-		timeout = 2 * time.Second
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	if addrs, err := res.LookupHost(ctx, host); err == nil && len(addrs) > 0 {
+	if addrs, err := net.DefaultResolver.LookupHost(ctx, host); err == nil && len(addrs) > 0 {
 		return true
 	}
 	return false

@@ -130,10 +130,10 @@ func validateUpstreamUniqueness(newConfig *registrycache.RegistryCacheConfig, ex
 func validateUpstreamResolvability(newConfig *registrycache.RegistryCacheConfig, dns DNSValidator) field.ErrorList {
 	var allErrs field.ErrorList
 
-	if u := newConfig.Spec.Upstream; u != "" {
-		host := stripPort(u)
+	if newConfig.Spec.Upstream != "" {
+		host := stripPort(newConfig.Spec.Upstream)
 		if dns != nil && host != "" && !dns.IsResolvable(host) {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("upstream"), u, "upstream is not DNS resolvable"))
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream, "upstream is not DNS resolvable"))
 		}
 	}
 

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-project/registry-cache/internal/webhook/validations"
-	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -80,11 +79,6 @@ func (v *RegistryCacheConfigCustomValidator) ValidateCreate(_ context.Context, o
 		return nil, fmt.Errorf("failed to list existing RegistryCacheConfig resources: %w", err)
 	}
 
-	var secretList v1.SecretList
-	if err := v.client.List(context.Background(), &secretList, client.InNamespace(registrycacheconfig.Namespace)); err != nil {
-		return nil, fmt.Errorf("failed to list secrets: %w", err)
-	}
-
 	return nil, validations.NewValidator(validations.DefaultDNSValidator{}, v.client).Do(registrycacheconfig).ToAggregate()
 }
 
@@ -105,11 +99,6 @@ func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, o
 	err := v.client.List(context.Background(), &registrycacheconfigs, client.InNamespace(newRegistryCacheConfig.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list existing RegistryCacheConfig resources: %w", err)
-	}
-
-	var secretList v1.SecretList
-	if err := v.client.List(context.Background(), &secretList, client.InNamespace(newRegistryCacheConfig.Namespace)); err != nil {
-		return nil, fmt.Errorf("failed to list secrets: %w", err)
 	}
 
 	return nil, validations.NewValidator(validations.DefaultDNSValidator{}, v.client).DoOnUpdate(newRegistryCacheConfig, oldRegistryCacheConfig).ToAggregate()

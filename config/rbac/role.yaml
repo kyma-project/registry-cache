@@ -25,4 +25,4 @@ rules:
   resources:
     - secrets
   verbs:
-    - list
+    - get

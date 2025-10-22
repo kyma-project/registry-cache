@@ -1,10 +1,14 @@
 package validations
 
 import (
+	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"net"
 	"net/url"
-	"slices"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	registrycacheext "github.com/gardener/gardener-extension-registry-cache/pkg/apis/registry"
@@ -17,17 +21,15 @@ import (
 
 // Validator validates RegistryCacheConfig resources.
 type Validator struct {
-	secrets         []v1.Secret
-	existingConfigs []registrycache.RegistryCacheConfig
-	dnsValidator    DNSValidator
+	dnsValidator  DNSValidator
+	runtimeClient client.Client
 }
 
 // NewValidator constructs a Validator with provided secrets and existing configs.
-func NewValidator(secrets []v1.Secret, existing []registrycache.RegistryCacheConfig, dnsValidator DNSValidator) Validator {
+func NewValidator(dnsValidator DNSValidator, runtimeClient client.Client) Validator {
 	return Validator{
-		secrets:         secrets,
-		existingConfigs: existing,
-		dnsValidator:    dnsValidator,
+		dnsValidator:  dnsValidator,
+		runtimeClient: runtimeClient,
 	}
 }
 
@@ -58,10 +60,10 @@ func (v Validator) DoOnUpdate(newConfig, oldConfig *registrycache.RegistryCacheC
 func (v Validator) validateCommon(newConfig *registrycache.RegistryCacheConfig) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	allErrs = append(allErrs, validateUpstreamUniqueness(newConfig, v.existingConfigs)...)
+	allErrs = append(allErrs, validateUpstreamUniqueness(newConfig, v.runtimeClient)...)
 	allErrs = append(allErrs, validateUpstreamResolvability(newConfig, v.dnsValidator)...)
 	allErrs = append(allErrs, validateRemoteURLResolvability(newConfig, v.dnsValidator)...)
-	allErrs = append(allErrs, validateSecretReference(newConfig, v.secrets)...)
+	allErrs = append(allErrs, validateSecretReference(newConfig, v.runtimeClient)...)
 
 	return allErrs
 }
@@ -109,21 +111,25 @@ func toExtensionCache(c registrycache.RegistryCacheConfigSpec) registrycacheext.
 	return ext
 }
 
-func validateUpstreamUniqueness(newConfig *registrycache.RegistryCacheConfig, existingConfigs []registrycache.RegistryCacheConfig) field.ErrorList {
-	var allErrs field.ErrorList
+func validateUpstreamUniqueness(newConfig *registrycache.RegistryCacheConfig, runtimeClient client.Client) field.ErrorList {
 
-	for _, existingConfig := range existingConfigs {
+	var existingConfigs registrycache.RegistryCacheConfigList
+	err := runtimeClient.List(context.Background(), &existingConfigs, client.InNamespace(newConfig.Namespace))
+	if err != nil {
+		return field.ErrorList{field.InternalError(field.NewPath("spec").Child("upstream"), errors.Wrap(err, "failed to list existing registry cache configs"))}
+	}
+
+	for _, existingConfig := range existingConfigs.Items {
 		if existingConfig.Name == newConfig.Name && existingConfig.Namespace == newConfig.Namespace {
 			continue
 		}
 
 		if existingConfig.Spec.Upstream == newConfig.Spec.Upstream {
-			allErrs = append(allErrs, field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream))
-			break
+			return field.ErrorList{field.Duplicate(field.NewPath("spec").Child("upstream"), newConfig.Spec.Upstream)}
 		}
 	}
 
-	return allErrs
+	return nil
 }
 
 func validateUpstreamResolvability(newConfig *registrycache.RegistryCacheConfig, dns DNSValidator) field.ErrorList {
@@ -159,25 +165,28 @@ func validateRemoteURLResolvability(newConfig *registrycache.RegistryCacheConfig
 	return allErrs
 }
 
-func validateSecretReference(newConfig *registrycache.RegistryCacheConfig, secrets []v1.Secret) field.ErrorList {
-	var allErrs field.ErrorList
-
+func validateSecretReference(newConfig *registrycache.RegistryCacheConfig, runtimeClient client.Client) field.ErrorList {
 	if newConfig.Spec.SecretReferenceName != nil {
-		secretIndex := slices.IndexFunc(secrets, func(secret v1.Secret) bool {
-			return secret.Name == *newConfig.Spec.SecretReferenceName && secret.Namespace == newConfig.Namespace
-		})
-		if secretIndex == -1 {
-			allErrs = append(allErrs,
-				field.Invalid(field.NewPath("spec").Child("secretReferenceName"),
-					*newConfig.Spec.SecretReferenceName, fmt.Sprintf("secret %s does not exist", *newConfig.Spec.SecretReferenceName)))
-		} else {
-			secret := secrets[secretIndex]
-			allErrs = append(allErrs,
-				registrycacheextvalidations.ValidateUpstreamRegistrySecret(&secret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)...)
+
+		var registryCacheSecret v1.Secret
+		err := runtimeClient.Get(context.Background(), types.NamespacedName{
+			Name:      *newConfig.Spec.SecretReferenceName,
+			Namespace: newConfig.Namespace,
+		}, &registryCacheSecret)
+
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				return field.ErrorList{field.Invalid(field.NewPath("spec").Child("secretReferenceName"),
+					*newConfig.Spec.SecretReferenceName, fmt.Sprintf("secret %s does not exist", *newConfig.Spec.SecretReferenceName))}
+			}
+
+			return field.ErrorList{field.InternalError(field.NewPath("spec").Child("secretReferenceName"), errors.Wrap(err, "failed to get secret"))}
 		}
+
+		return registrycacheextvalidations.ValidateUpstreamRegistrySecret(&registryCacheSecret, field.NewPath("spec").Child("secretReferenceName"), *newConfig.Spec.SecretReferenceName)
 	}
 
-	return allErrs
+	return nil
 }
 
 func isEmptySpec(s registrycache.RegistryCacheConfigSpec) bool {

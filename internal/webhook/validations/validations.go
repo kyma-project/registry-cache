@@ -114,7 +114,7 @@ func toExtensionCache(c registrycache.RegistryCacheConfigSpec) registrycacheext.
 func validateUpstreamUniqueness(newConfig *registrycache.RegistryCacheConfig, runtimeClient client.Client) field.ErrorList {
 
 	var existingConfigs registrycache.RegistryCacheConfigList
-	err := runtimeClient.List(context.Background(), &existingConfigs, client.InNamespace(newConfig.Namespace))
+	err := runtimeClient.List(context.Background(), &existingConfigs)
 	if err != nil {
 		return field.ErrorList{field.InternalError(field.NewPath("spec").Child("upstream"), errors.Wrap(err, "failed to list existing registry cache configs"))}
 	}

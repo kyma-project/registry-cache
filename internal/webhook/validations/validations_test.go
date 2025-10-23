@@ -137,7 +137,7 @@ func TestDo(t *testing.T) {
 		cfg := buildConfig("config2", "default", registrycache.RegistryCacheConfigSpec{
 			Upstream: "docker.io",
 		})
-		existing := buildConfig("config1", "default", registrycache.RegistryCacheConfigSpec{Upstream: "docker.io"})
+		existing := buildConfig("config1", "test", registrycache.RegistryCacheConfigSpec{Upstream: "docker.io"})
 
 		errs := NewValidator(env.dnsResolverAllOK, fixFakeClient(&existing)).Do(&cfg)
 		validateResult(t, field.ErrorList{
@@ -266,7 +266,7 @@ func TestDoOnUpdate(t *testing.T) {
 			Upstream: "docker.io",
 		})
 
-		config2 := buildConfig("config2", "default", registrycache.RegistryCacheConfigSpec{
+		config2 := buildConfig("config2", "test", registrycache.RegistryCacheConfigSpec{
 			Upstream: "docker.io",
 		})
 

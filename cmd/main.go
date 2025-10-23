@@ -20,12 +20,14 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
+	"os"
+	"path"
+
+	rccontroller "github.com/kyma-project/registry-cache/internal/controller"
 	"github.com/kyma-project/registry-cache/internal/webhook/certificate"
 	"github.com/kyma-project/registry-cache/internal/webhook/v1beta1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
-	"os"
-	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -41,7 +43,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	corekymaprojectiov1beta1 "github.com/kyma-project/registry-cache/api/v1beta1"
+	registrycachetypes "github.com/kyma-project/registry-cache/api/v1beta1"
+	"github.com/kyma-project/registry-cache/pkg/yaml"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -61,8 +64,7 @@ const (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(corekymaprojectiov1beta1.AddToScheme(scheme))
+	utilruntime.Must(registrycachetypes.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -176,6 +178,24 @@ func main() {
 
 	if err := v1beta1.SetupRegistryCacheConfigWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to setup registry cache config webhook")
+		os.Exit(1)
+	}
+
+	file, err := os.Open("./dist/install.yaml")
+	if err != nil {
+		setupLog.Error(err, "unable to open k8s manifest file")
+	}
+
+	data, err := yaml.LoadData(file)
+	if err != nil {
+		setupLog.Error(err, "unable to load k8s manifest file")
+		os.Exit(1)
+	}
+
+	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr, data)
+
+	if err = regCacheReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "RegistryCache")
 		os.Exit(1)
 	}
 

@@ -1,0 +1,19 @@
+name: security
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  govuln:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: vulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: 1.25.2
+          go-package: ./...

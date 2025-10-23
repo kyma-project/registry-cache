@@ -28,3 +28,6 @@ go.work
 
 # installer output
 dist
+
+# vendored files
+vendor

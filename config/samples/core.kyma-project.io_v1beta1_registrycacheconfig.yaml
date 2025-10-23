@@ -1,4 +1,4 @@
-apiVersion: core.kyma-project.io.kyma-project.io/v1beta1
+apiVersion: core.kyma-project.io/v1beta1
 kind: RegistryCacheConfig
 metadata:
   labels:

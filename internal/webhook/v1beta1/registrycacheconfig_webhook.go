@@ -18,8 +18,9 @@ package v1beta1
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/kyma-project/registry-cache/internal/webhook/validations"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,13 +36,13 @@ import (
 var registrycacheconfiglog = logf.Log.WithName("registrycacheconfig-resource")
 
 // SetupRegistryCacheConfigWebhookWithManager registers the webhook for RegistryCacheConfig in the manager.
-func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager) error {
+func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager, client client.Client) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&corekymaprojectiov1beta1.RegistryCacheConfig{}).
-		WithValidator(&RegistryCacheConfigCustomValidator{}).
+		WithValidator(NewRegistryCacheConfigCustomValidator(client)).
 		Complete()
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validations.
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-core-kyma-project-io-v1beta1-registrycacheconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.kyma-project.io,resources=registrycacheconfigs,verbs=create;update,versions=v1beta1,name=registrycacheconfig-v1beta1.kb.io,admissionReviewVersions=v1
@@ -52,7 +53,13 @@ func SetupRegistryCacheConfigWebhookWithManager(mgr ctrl.Manager) error {
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
 type RegistryCacheConfigCustomValidator struct {
-	// TODO(user): Add more fields as needed for validation
+	client client.Client
+}
+
+func NewRegistryCacheConfigCustomValidator(client client.Client) *RegistryCacheConfigCustomValidator {
+	return &RegistryCacheConfigCustomValidator{
+		client: client,
+	}
 }
 
 var _ webhook.CustomValidator = &RegistryCacheConfigCustomValidator{}
@@ -66,34 +73,38 @@ func (v *RegistryCacheConfigCustomValidator) ValidateCreate(_ context.Context, o
 	}
 	registrycacheconfiglog.Info("Validation for RegistryCacheConfig upon creation", "name", registrycacheconfig.GetName())
 
-	// TODO(user): fill in your validation logic upon object creation.
+	var registrycacheconfigs corekymaprojectiov1beta1.RegistryCacheConfigList
+	err := v.client.List(context.Background(), &registrycacheconfigs, client.InNamespace(registrycacheconfig.Namespace))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list existing RegistryCacheConfig resources: %w", err)
+	}
 
-	return nil, errors.New("not implemented temporarily")
+	return nil, validations.NewValidator(validations.DefaultDNSValidator{}, v.client).Do(registrycacheconfig).ToAggregate()
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.
 func (v *RegistryCacheConfigCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 
-	registrycacheconfig, ok := newObj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
+	newRegistryCacheConfig, ok := newObj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
 	if !ok {
 		return nil, fmt.Errorf("expected a RegistryCacheConfig object for the newObj but got %T", newObj)
 	}
-	registrycacheconfiglog.Info("Validation for RegistryCacheConfig upon update", "name", registrycacheconfig.GetName())
 
-	// TODO(user): fill in your validation logic upon object update.
+	oldRegistryCacheConfig, ok := oldObj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
+	if !ok {
+		return nil, fmt.Errorf("expected a RegistryCacheConfig object for the newObj but got %T", newObj)
+	}
 
-	return nil, errors.New("not implemented temporarily")
+	var registrycacheconfigs corekymaprojectiov1beta1.RegistryCacheConfigList
+	err := v.client.List(context.Background(), &registrycacheconfigs, client.InNamespace(newRegistryCacheConfig.Namespace))
+	if err != nil {
+		return nil, fmt.Errorf("failed to list existing RegistryCacheConfig resources: %w", err)
+	}
+
+	return nil, validations.NewValidator(validations.DefaultDNSValidator{}, v.client).DoOnUpdate(newRegistryCacheConfig, oldRegistryCacheConfig).ToAggregate()
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type RegistryCacheConfig.
-func (v *RegistryCacheConfigCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	registrycacheconfig, ok := obj.(*corekymaprojectiov1beta1.RegistryCacheConfig)
-	if !ok {
-		return nil, fmt.Errorf("expected a RegistryCacheConfig object but got %T", obj)
-	}
-	registrycacheconfiglog.Info("Validation for RegistryCacheConfig upon deletion", "name", registrycacheconfig.GetName())
-
-	// TODO(user): fill in your validation logic upon object deletion.
-
+func (v *RegistryCacheConfigCustomValidator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	return nil, nil
 }

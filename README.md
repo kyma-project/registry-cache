@@ -7,6 +7,13 @@
 > - `Contributing` - do not change this!
 > - `Code of Conduct` - do not change this!
 > - `Licensing` - do not change this!
+>
+[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/registry-cache)](https://api.reuse.software/info/github.com/kyma-project/registry-cache)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kyma-project/registry-cache)](https://goreportcard.com/report/github.com/kyma-project/registry-cache)
+[![unit tests](https://badgen.net/github/checks/kyma-project/registry-cache/main/unit-tests)](https://github.com/kyma-project/registry-cache/actions/workflows/unit-tests.yaml)
+[![Coverage Status](https://coveralls.io/repos/github/kyma-project/registry-cache/badge.svg?branch=main)](https://coveralls.io/github/kyma-project/registry-cache?branch=main)
+[![golangci lint](https://badgen.net/github/checks/kyma-project/registry-cache/main/golangci-lint)](https://github.com/kyma-project/registry-cache/actions/workflows/lint.yaml)
+[![latest release](https://badgen.net/github/release/kyma-project/registry-cache)](https://github.com/kyma-project/registry-cache/releases/latest)
 
 # {Project Title}
 <!--- mandatory --->

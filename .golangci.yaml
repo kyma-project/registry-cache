@@ -1,0 +1,53 @@
+version: "2"
+run:
+  modules-download-mode: readonly
+output:
+  formats:
+    tab:
+      path: stdout
+      colors: false
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+  settings:
+    gocritic:
+      settings:
+        captLocal:
+          paramsOnly: false
+        underef:
+          skipRecvDeref: false
+    govet:
+      disable:
+        - fieldalignment
+    mnd:
+      ignored-functions:
+        - os.Chmod
+        - os.Mkdir
+        - os.MkdirAll
+        - os.OpenFile
+        - os.WriteFile
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-same-issues: 5
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

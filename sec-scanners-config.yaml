@@ -7,6 +7,6 @@ mend:
   exclude:
     - "**/*_test.go"
 checkmarx-one:
-    preset: go-default
-    exclude:
-        - '**/*_test.go'
+  preset: go-default
+  exclude:
+    - '**/*_test.go'

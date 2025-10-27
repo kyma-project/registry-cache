@@ -5,7 +5,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - core.kyma-project.io.kyma-project.io
+  - core.kyma-project.io
   resources:
   - registrycacheconfigs
   verbs:
@@ -20,3 +20,9 @@ rules:
   verbs:
     - get
     - patch
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - get

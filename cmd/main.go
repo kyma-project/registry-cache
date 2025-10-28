@@ -23,7 +23,6 @@ import (
 	"os"
 	"path"
 
-	rccontroller "github.com/kyma-project/registry-cache/internal/controller"
 	"github.com/kyma-project/registry-cache/internal/webhook/certificate"
 	"github.com/kyma-project/registry-cache/internal/webhook/v1beta1"
 	"k8s.io/client-go/rest"
@@ -177,24 +176,6 @@ func main() {
 
 	if err := v1beta1.SetupRegistryCacheConfigWebhookWithManager(mgr, rtClient); err != nil {
 		setupLog.Error(err, "unable to setup registry cache config webhook")
-		os.Exit(1)
-	}
-
-	//file, err := os.Open("./dist/install.yaml")
-	//if err != nil {
-	//	setupLog.Error(err, "unable to open k8s manifest file")
-	//}
-	//
-	//data, err := yaml.LoadData(file)
-	//if err != nil {
-	//	setupLog.Error(err, "unable to load k8s manifest file")
-	//	os.Exit(1)
-	//}
-
-	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr)
-
-	if err = regCacheReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "RegistryCache")
 		os.Exit(1)
 	}
 

@@ -191,7 +191,7 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr, nil)
+	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr)
 
 	if err = regCacheReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RegistryCache")

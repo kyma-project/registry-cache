@@ -56,7 +56,7 @@ type RegistryCacheReconciler struct {
 	FinalDeletionState v1beta1.State
 }
 
-func NewRegistryCacheReconciller(mgr ctrl.Manager, objects []unstructured.Unstructured) *RegistryCacheReconciler {
+func NewRegistryCacheReconciller(mgr ctrl.Manager) *RegistryCacheReconciler {
 	return &RegistryCacheReconciler{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),

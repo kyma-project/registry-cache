@@ -44,7 +44,6 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	registrycachetypes "github.com/kyma-project/registry-cache/api/v1beta1"
-	"github.com/kyma-project/registry-cache/pkg/yaml"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -181,18 +180,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	file, err := os.Open("./dist/install.yaml")
-	if err != nil {
-		setupLog.Error(err, "unable to open k8s manifest file")
-	}
+	//file, err := os.Open("./dist/install.yaml")
+	//if err != nil {
+	//	setupLog.Error(err, "unable to open k8s manifest file")
+	//}
+	//
+	//data, err := yaml.LoadData(file)
+	//if err != nil {
+	//	setupLog.Error(err, "unable to load k8s manifest file")
+	//	os.Exit(1)
+	//}
 
-	data, err := yaml.LoadData(file)
-	if err != nil {
-		setupLog.Error(err, "unable to load k8s manifest file")
-		os.Exit(1)
-	}
-
-	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr, data)
+	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr, nil)
 
 	if err = regCacheReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RegistryCache")

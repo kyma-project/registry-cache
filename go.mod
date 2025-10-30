@@ -1,6 +1,6 @@
 module github.com/kyma-project/registry-cache
 
-go 1.25.2
+go 1.25.3
 
 require (
 	github.com/gardener/gardener-extension-registry-cache v0.16.0

@@ -20,12 +20,13 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
+	"os"
+	"path"
+
 	"github.com/kyma-project/registry-cache/internal/webhook/certificate"
 	"github.com/kyma-project/registry-cache/internal/webhook/v1beta1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
-	"os"
-	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -41,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	corekymaprojectiov1beta1 "github.com/kyma-project/registry-cache/api/v1beta1"
+	registrycachetypes "github.com/kyma-project/registry-cache/api/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -61,8 +62,7 @@ const (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(corekymaprojectiov1beta1.AddToScheme(scheme))
+	utilruntime.Must(registrycachetypes.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

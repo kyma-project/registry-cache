@@ -3,8 +3,8 @@ kind: Kustomization
 images:
 - newTag: local
 - name: controller
-  newName: koala7659/registry-cache-test
-  newTag: test1
+  newName: test
+  newTag: testtag
 - name: controller-admission
 resources:
 - manager.yaml

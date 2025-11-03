@@ -1,7 +1,7 @@
 name: Documentation-CRON
 run-name: ${{github.event.pull_request.title}}
 on:
-  schedule:
+    schedule:
     # Run everyday at 5:00 AM
     - cron: "0 5 * * *"
 jobs:
@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: gaurav-nelson/github-action-markdown-link-check@0524e79d8d7d1606112722dd7a3b5f5ce367de3e
         with:
-          use-quiet-mode: 'yes'
+          use-quiet-mode: 'yes'  
           use-verbose-mode: 'yes'
           config-file: '.mlc.config.json'
           folder-path: '.'

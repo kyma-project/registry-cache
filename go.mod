@@ -1,6 +1,6 @@
 module github.com/kyma-project/registry-cache
 
-go 1.25.2
+go 1.25.3
 
 require (
 	github.com/gardener/gardener-extension-registry-cache v0.16.0
@@ -72,4 +72,11 @@ require (
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
+)
+
+replace (
+	golang.org/x/net => golang.org/x/net v0.46.0
+	golang.org/x/sys => golang.org/x/sys v0.37.0
+	golang.org/x/text => golang.org/x/text v0.30.0
+	golang.org/x/tools => golang.org/x/tools v0.38.0
 )

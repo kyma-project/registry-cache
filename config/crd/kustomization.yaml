@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/core.kyma-project.io_registrycacheconfigs.yaml
+- bases/core.kyma-project.io_registrycaches.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

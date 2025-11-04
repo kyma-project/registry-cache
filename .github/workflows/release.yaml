@@ -51,13 +51,19 @@ jobs:
 
       - name: Generate Release module artifacts for tag release
         if: needs.setup.outputs.tag != ''
-        run: make build-installer > registry-cache.yaml || (echo "make install failed" && exit 1)
+        run: |
+          set -e
+          make build-installer 
+          cp ./dist/install.yaml registry-cache.yaml
         env:
           IMG: ${{ needs.setup.outputs.tag }}
 
       - name: Generate Release module artifacts for experimental tag release
         if: needs.setup.outputs.tag_experimental != ''
-        run: make build-installer > registry-cache-experimental.yaml || (echo "make install failed" && exit 1)
+        run: | 
+          set -e
+          make build-installer
+          cp ./dist/install.yaml registry-cache-experimental.yaml
         env:
           IMG: ${{ needs.setup.outputs.tag_experimental }}
 

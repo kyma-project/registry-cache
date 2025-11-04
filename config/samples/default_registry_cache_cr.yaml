@@ -3,7 +3,6 @@ kind: RegistryCache
 metadata:
   labels:
     app.kubernetes.io/name: registry-cache
-    app.kubernetes.io/managed-by: kustomize
-  name: registrycache-sample
+  name: default
 spec:
   # TODO(user): Add fields here

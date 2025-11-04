@@ -15,6 +15,7 @@ jobs:
       tag: ${{ steps.tag.outputs.tag || '' }}
       # experimental tag derived from tag (or empty string)
       tag_experimental: ${{ steps.tag.outputs.tag && format('{0}-experimental', steps.tag.outputs.tag) || '' }}
+      image_registry: europe-docker.pkg.dev/kyma-project/prod/registry-cache
     steps:
       - name: Checkout push/tag ref
         uses: actions/checkout@v5
@@ -50,13 +51,12 @@ jobs:
             --output-path=./config/crd/crd-docs.md
 
       - name: Generate Release module artifacts for tag release
-        if: needs.setup.outputs.tag != ''
         run: |
           set -e
           make build-installer 
           cp ./dist/install.yaml registry-cache.yaml
         env:
-          IMG: ${{ needs.setup.outputs.tag }}
+          IMG: ${{ needs.setup.outputs.image_registry }}:${{ needs.setup.outputs.tag }}
 
       - name: Generate Release module artifacts for experimental tag release
         if: needs.setup.outputs.tag_experimental != ''
@@ -65,7 +65,7 @@ jobs:
           make build-installer
           cp ./dist/install.yaml registry-cache-experimental.yaml
         env:
-          IMG: ${{ needs.setup.outputs.tag_experimental }}
+          IMG: ${{ needs.setup.outputs.image_registry }}:${{ needs.setup.outputs.tag_experimental }}
 
       - name: Create Release and Generate Notes
         uses: softprops/action-gh-release@v2
@@ -74,7 +74,7 @@ jobs:
             ./config/crd/crd-docs.md
             ./registry-cache.yaml
             ./registry-cache-experimental.yaml
-            ./config/samples/default-registry_cache_cr.yaml
+            ./config/samples/default_registry_cache_cr.yaml
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

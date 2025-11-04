@@ -1,4 +1,4 @@
-name: Generate and Release CRD Docs
+name: Generate and Release CRD Docs and other release artifacts
 
 on:
   push:
@@ -11,20 +11,21 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     outputs:
+      # the tag name (or empty string)
       tag: ${{ steps.tag.outputs.tag || '' }}
-      # set to {tag}-experimental if tag is set, otherwise set to empty string
-      tag-experimental: ${{ steps.tag.outputs.tag && format('{0}-experimental', steps.tag.outputs.tag) || '' }}
+      # experimental tag derived from tag (or empty string)
+      tag_experimental: ${{ steps.tag.outputs.tag && format('{0}-experimental', steps.tag.outputs.tag) || '' }}
     steps:
-      - name: Checkout code
+      - name: Checkout push/tag ref
         uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
       - id: tag
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
   generate-release:
+    needs: setup
+    if: needs.setup.outputs.tag != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Needed for creating releases and uploading assets
@@ -49,16 +50,16 @@ jobs:
             --output-path=./config/crd/crd-docs.md
 
       - name: Generate Release module artifacts for tag release
-        run: make install > registry-cache.yaml
+        if: needs.setup.outputs.tag != ''
+        run: make install > registry-cache.yaml || (echo "make install failed" && exit 1)
         env:
-          # Use current tag as version
           IMG: ${{ needs.setup.outputs.tag }}
 
       - name: Generate Release module artifacts for experimental tag release
-        run: make install > registry-cache-experimental.yaml
+        if: needs.setup.outputs.tag_experimental != ''
+        run: make install > registry-cache-experimental.yaml || (echo "make install failed" && exit 1)
         env:
-          IMG: ${{ needs.setup.outputs.tag-experimental }}
-
+          IMG: ${{ needs.setup.outputs.tag_experimental }}
 
       - name: Create Release and Generate Notes
         uses: softprops/action-gh-release@v2
@@ -68,7 +69,6 @@ jobs:
             ./registry-cache.yaml
             ./registry-cache-experimental.yaml
             ./config/samples/default-registry_cache_cr.yaml
-            
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

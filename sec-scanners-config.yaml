@@ -1,7 +1,7 @@
 module-name: registry-cache
 kind: kyma
 bdba:
-  - europe-docker.pkg.dev/kyma-project/prod/registry-cache:latest
+  - europe-docker.pkg.dev/kyma-project/prod/registry-cache:0.0.3
 mend:
   language: golang-mod
   exclude:

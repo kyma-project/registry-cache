@@ -5,8 +5,8 @@ go 1.25.3
 require (
 	github.com/gardener/gardener-extension-registry-cache v0.18.0
 	github.com/go-logr/logr v1.4.3
-	github.com/onsi/ginkgo/v2 v2.25.0
-	github.com/onsi/gomega v1.38.0
+	github.com/onsi/ginkgo/v2 v2.25.1
+	github.com/onsi/gomega v1.38.2
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.34.1

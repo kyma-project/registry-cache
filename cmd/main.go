@@ -179,7 +179,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr)
+	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr, webhookServer.StartedChecker())
 
 	if err = regCacheReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RegistryCache")

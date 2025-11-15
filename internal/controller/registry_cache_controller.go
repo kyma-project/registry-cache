@@ -24,17 +24,17 @@ import (
 	"github.com/kyma-project/registry-cache/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
-	requeueInterval = time.Second * 3
+	requeueInterval = time.Second * 5
 	finalizer       = "registry-cache.kyma-project.io/finalizer"
 	debugLogLevel   = 2
 	fieldOwner      = "registry-cache.kyma-project.io/owner"
@@ -44,20 +44,20 @@ type RegistryCacheReconciler struct {
 	client.Client
 	*runtime.Scheme
 	record.EventRecorder
-	*rest.Config
+	healthz.Checker
 }
 
-func NewRegistryCacheReconciller(mgr ctrl.Manager) *RegistryCacheReconciler {
+func NewRegistryCacheReconciller(mgr ctrl.Manager, check healthz.Checker) *RegistryCacheReconciler {
 	return &RegistryCacheReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		//metrics: metrics,
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		EventRecorder: mgr.GetEventRecorderFor("registry-cache-controller"),
+		Checker:       check,
 	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RegistryCacheReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Config = mgr.GetConfig()
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1beta1.RegistryCache{}).
@@ -90,6 +90,7 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	if instance.GetDeletionTimestamp().IsZero() {
+		logger.Info("Adding finalizer")
 		if controllerutil.AddFinalizer(&instance, finalizer) {
 			return ctrl.Result{}, r.ssa(ctx, &instance)
 		}
@@ -119,6 +120,7 @@ func (r *RegistryCacheReconciler) HandleInitialState(ctx context.Context, object
 	status := getInstanceStatus(objectInstance)
 	logger := log.FromContext(ctx)
 	logger.Info("RegistryCache resource init state processing")
+	logger.Info("Setting state to processing")
 
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
 		WithState(v1beta1.StateProcessing).
@@ -135,8 +137,9 @@ func (r *RegistryCacheReconciler) HandleProcessingState(ctx context.Context, obj
 		// stay in Processing state until we are ready
 		return nil
 	}
+
+	logger.Info("Setting state to Ready")
 	status := getInstanceStatus(objectInstance)
-	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
 		WithState(v1beta1.StateReady).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
@@ -152,6 +155,7 @@ func (r *RegistryCacheReconciler) HandleErrorState(ctx context.Context, objectIn
 		return nil
 	}
 
+	logger.Info("Setting state to Ready")
 	status := getInstanceStatus(objectInstance)
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
@@ -168,6 +172,7 @@ func (r *RegistryCacheReconciler) HandleDeletingState(ctx context.Context, objec
 	r.Event(objectInstance, "Normal", "Deleting", "deleting webhook")
 
 	// if webhook is about to be deleted, remove finalizer
+	logger.Info("Removing finalizer")
 	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {
 		if err := r.Update(ctx, objectInstance); err != nil {
 			return fmt.Errorf("error while removing finalizer: %w", err)
@@ -179,12 +184,14 @@ func (r *RegistryCacheReconciler) HandleDeletingState(ctx context.Context, objec
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
 func (r *RegistryCacheReconciler) HandleReadyState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	status := getInstanceStatus(objectInstance)
+	logger := log.FromContext(ctx)
+	logger.Info("RegistryCache resource ready state processing")
 
 	// check if webhook is still ready
 	if err := r.checkWebhookIsReady(); err != nil {
-
-		r.Event(objectInstance, "Warning", "ResourcesInstall", err.Error())
+		r.Event(objectInstance, "Error", "Webhook not ready", err.Error())
+		logger.Info("Setting state to Error")
+		status := getInstanceStatus(objectInstance)
 		return r.setStatusForObjectInstance(ctx, objectInstance, status.
 			WithState(v1beta1.StateError).
 			WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
@@ -193,8 +200,8 @@ func (r *RegistryCacheReconciler) HandleReadyState(ctx context.Context, objectIn
 }
 
 func (r *RegistryCacheReconciler) checkWebhookIsReady() error {
-	//replace with webhookServer.StartedChecker()
-	return nil
+	// check if webhook server is ready, make http request and call checker
+	return r.Checker(nil)
 }
 
 func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *v1beta1.RegistryCache, status *v1beta1.RegistryCacheStatus) error {

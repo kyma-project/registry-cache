@@ -117,11 +117,11 @@ func getInstanceStatus(objectInstance *v1beta1.RegistryCache) v1beta1.RegistryCa
 
 // HandleInitialState bootstraps state handling for the reconciled resource.
 func (r *RegistryCacheReconciler) HandleInitialState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	status := getInstanceStatus(objectInstance)
 	logger := log.FromContext(ctx)
 	logger.Info("RegistryCache resource init state processing")
-	logger.Info("Setting state to processing")
 
+	status := getInstanceStatus(objectInstance)
+	logger.Info("Setting state to processing")
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
 		WithState(v1beta1.StateProcessing).
 		WithInstallConditionStatus(metav1.ConditionUnknown, objectInstance.GetGeneration()))

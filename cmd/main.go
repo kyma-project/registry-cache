@@ -26,7 +26,6 @@ import (
 	rccontroller "github.com/kyma-project/registry-cache/internal/controller"
 	"github.com/kyma-project/registry-cache/internal/webhook/certificate"
 	"github.com/kyma-project/registry-cache/internal/webhook/v1beta1"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -104,13 +103,15 @@ func main() {
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
 
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		setupLog.Error(err, "unable to create rest configuration")
-		os.Exit(1)
-	}
+	restConfig := ctrl.GetConfigOrDie()
 
-	rtClient, err := client.New(config, client.Options{
+	//config, err := rest.InClusterConfig()
+	//if err != nil {
+	//	setupLog.Error(err, "unable to create rest configuration")
+	//	os.Exit(1)
+	//}
+
+	rtClient, err := client.New(restConfig, client.Options{
 		Scheme: scheme,
 	})
 	if err != nil {

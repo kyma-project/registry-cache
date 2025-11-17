@@ -102,7 +102,7 @@ func (s *RegistryCacheStatus) WithInstallConditionStatus(status metav1.Condition
 		condition = &metav1.Condition{
 			Type:    ConditionTypeStartup,
 			Reason:  ConditionReasonReady,
-			Message: "installation is ready and resources can be used",
+			Message: "Starting module",
 		}
 	}
 
@@ -118,4 +118,8 @@ type RegistryCacheList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RegistryCache `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&RegistryCache{}, &RegistryCacheList{})
 }

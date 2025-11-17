@@ -90,8 +90,8 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	if instance.GetDeletionTimestamp().IsZero() {
-		logger.Info("Adding finalizer")
 		if controllerutil.AddFinalizer(&instance, finalizer) {
+			logger.Info("Adding finalizer")
 			return ctrl.Result{}, r.ssa(ctx, &instance)
 		}
 	}

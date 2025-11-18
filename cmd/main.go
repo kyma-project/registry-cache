@@ -105,12 +105,6 @@ func main() {
 
 	restConfig := ctrl.GetConfigOrDie()
 
-	//config, err := rest.InClusterConfig()
-	//if err != nil {
-	//	setupLog.Error(err, "unable to create rest configuration")
-	//	os.Exit(1)
-	//}
-
 	rtClient, err := client.New(restConfig, client.Options{
 		Scheme: scheme,
 	})
@@ -180,7 +174,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	regCacheReconciler := rccontroller.NewRegistryCacheReconciller(mgr, webhookServer.StartedChecker())
+	regCacheReconciler := rccontroller.NewRegistryCacheReconciler(mgr, webhookServer.StartedChecker())
 
 	if err = regCacheReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RegistryCache")

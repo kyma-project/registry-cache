@@ -48,7 +48,7 @@ type RegistryCacheReconciler struct {
 	healthz.Checker
 }
 
-func NewRegistryCacheReconciller(mgr ctrl.Manager, check healthz.Checker) *RegistryCacheReconciler {
+func NewRegistryCacheReconciler(mgr ctrl.Manager, check healthz.Checker) *RegistryCacheReconciler {
 	return &RegistryCacheReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
@@ -87,7 +87,7 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	status := getInstanceStatus(&instance)
 
 	if !instance.GetDeletionTimestamp().IsZero() && status.State != v1beta1.StateDeleting {
-		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &instance, status.WithState(v1beta1.StateDeleting))
+		return ctrl.Result{RequeueAfter: requeueInterval}, r.setStatusForObjectInstance(ctx, &instance, status.WithState(v1beta1.StateDeleting))
 	}
 
 	if instance.GetDeletionTimestamp().IsZero() {

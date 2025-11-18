@@ -21,7 +21,6 @@ const (
 	requeueInterval       = time.Second * 5
 	requeueHealthInterval = time.Second * 30
 	finalizer             = "registry-cache.kyma-project.io/finalizer"
-	debugLogLevel         = 2
 	fieldOwner            = "registry-cache.kyma-project.io/owner"
 )
 
@@ -81,7 +80,7 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	switch status.State {
 	case "":
-		return ctrl.Result{}, r.handleInitialState(ctx, &instance)
+		return ctrl.Result{RequeueAfter: requeueInterval}, r.handleInitialState(ctx, &instance)
 	case v1beta1.StateProcessing:
 		return ctrl.Result{RequeueAfter: requeueInterval}, r.handleProcessingState(ctx, &instance)
 	case v1beta1.StateDeleting:
@@ -173,7 +172,6 @@ func (r *RegistryCacheReconciler) ssaStatus(ctx context.Context, obj client.Obje
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}}); err != nil {
 		return fmt.Errorf("error while patching status: %w", err)
 	}
-
 	return nil
 }
 

@@ -19,9 +19,10 @@ import (
 )
 
 var (
-	testEnv    *envtest.Environment
-	suiteCtx   context.Context
-	cancelFunc context.CancelFunc
+	k8sClient  client.Client        //nolint:gochecknoglobals
+	testEnv    *envtest.Environment //nolint:gochecknoglobals
+	suiteCtx   context.Context      //nolint:gochecknoglobals
+	cancelFunc context.CancelFunc   //nolint:gochecknoglobals
 )
 
 func TestControllers(t *testing.T) {
@@ -42,9 +43,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	// Initialize clients, schemes, and other resources here as needed for tests
-
-	k8sClient, err := client.New(cfg, client.Options{Scheme: runtime.NewScheme()})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: runtime.NewScheme()})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 

@@ -1,19 +1,3 @@
-/*
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package rccontroller
 
 import (
@@ -57,9 +41,7 @@ func NewRegistryCacheReconciler(mgr ctrl.Manager, check healthz.Checker) *Regist
 	}
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *RegistryCacheReconciler) SetupWithManager(mgr ctrl.Manager) error {
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1beta1.RegistryCache{}).
 		WithEventFilter(predicate.Or(
@@ -99,83 +81,48 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	switch status.State {
 	case "":
-		return ctrl.Result{}, r.HandleInitialState(ctx, &instance)
+		return ctrl.Result{}, r.handleInitialState(ctx, &instance)
 	case v1beta1.StateProcessing:
-		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleProcessingState(ctx, &instance)
+		return ctrl.Result{RequeueAfter: requeueInterval}, r.handleProcessingState(ctx, &instance)
 	case v1beta1.StateDeleting:
-		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleDeletingState(ctx, &instance)
+		return ctrl.Result{RequeueAfter: requeueInterval}, r.handleDeletingState(ctx, &instance)
 	case v1beta1.StateError:
-		return ctrl.Result{RequeueAfter: requeueHealthInterval}, r.HandleErrorState(ctx, &instance)
+		return ctrl.Result{RequeueAfter: requeueHealthInterval}, r.handleErrorState(ctx, &instance)
 	case v1beta1.StateReady, v1beta1.StateWarning:
-		return ctrl.Result{RequeueAfter: requeueHealthInterval}, r.HandleReadyState(ctx, &instance)
+		return ctrl.Result{RequeueAfter: requeueHealthInterval}, r.handleReadyState(ctx, &instance)
 	}
 	return ctrl.Result{}, nil
 }
 
-func getInstanceStatus(objectInstance *v1beta1.RegistryCache) v1beta1.RegistryCacheStatus {
-	return objectInstance.Status
+func (r *RegistryCacheReconciler) handleInitialState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	return r.setInstanceStatus(ctx, objectInstance, v1beta1.StateProcessing, metav1.ConditionUnknown)
 }
 
-// HandleInitialState bootstraps state handling for the reconciled resource.
-func (r *RegistryCacheReconciler) HandleInitialState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	logger := log.FromContext(ctx)
-	logger.Info("RegistryCache resource init state processing")
-
-	logger.Info("Setting state to processing")
-	status := getInstanceStatus(objectInstance)
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(v1beta1.StateProcessing).
-		WithInstallConditionStatus(metav1.ConditionUnknown, objectInstance.GetGeneration()))
+func (r *RegistryCacheReconciler) handleProcessingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	return r.attemptToBecomeReady(ctx, objectInstance)
 }
 
-// HandleProcessingState processes the reconciled resource by processing the underlying resources.
-// Based on the processing either a success or failure state is set on the reconciled resource.
-func (r *RegistryCacheReconciler) HandleProcessingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	logger := log.FromContext(ctx)
-	logger.Info("RegistryCache resource processing state")
+func (r *RegistryCacheReconciler) handleErrorState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	return r.attemptToBecomeReady(ctx, objectInstance)
+}
 
-	if err := r.checkWebhookIsReady(); err != nil {
-		// stay in Processing state until we are ready
-		logger.Info("Webhook server not ready, yet")
-		return nil
+func (r *RegistryCacheReconciler) handleReadyState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	// check if webhook is still ready
+	if err := r.Checker(nil); err != nil {
+		r.Event(objectInstance, "Error", "Webhook server not ready", err.Error())
+		return r.setInstanceStatus(ctx, objectInstance, v1beta1.StateError, metav1.ConditionFalse)
 	}
-
-	logger.Info("Setting state to Ready")
-	status := getInstanceStatus(objectInstance)
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(v1beta1.StateReady).
-		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
+	return nil
 }
 
-// HandleErrorState handles error recovery for the reconciled resource.
-func (r *RegistryCacheReconciler) HandleErrorState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	logger := log.FromContext(ctx)
-	logger.Info("RegistryCache resource error state processing")
-
-	if err := r.checkWebhookIsReady(); err != nil {
-		// stay in Error state until we are ready
-		return nil
-	}
-
-	logger.Info("Setting state to Ready")
-	status := getInstanceStatus(objectInstance)
-	// set eventual state to Ready - if no errors were found
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(v1beta1.StateReady).
-		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
-}
-
-// HandleDeletingState processed the deletion on the reconciled resource.
-// Once the deletion if processed the relevant finalizers (if applied) are removed.
-func (r *RegistryCacheReconciler) HandleDeletingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+func (r *RegistryCacheReconciler) handleDeletingState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
 	logger := log.FromContext(ctx)
 	logger.Info("RegistryCache resource deleting state processing")
 
 	r.Event(objectInstance, "Normal", "Deleting", "deleting webhook")
 
-	// if webhook is about to be deleted, remove finalizer
-	logger.Info("Removing finalizer")
 	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {
+		logger.Info("Removing finalizer")
 		if err := r.Update(ctx, objectInstance); err != nil {
 			return fmt.Errorf("error while removing finalizer: %w", err)
 		}
@@ -184,26 +131,25 @@ func (r *RegistryCacheReconciler) HandleDeletingState(ctx context.Context, objec
 	return nil
 }
 
-// HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
-func (r *RegistryCacheReconciler) HandleReadyState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
-	logger := log.FromContext(ctx)
-	logger.Info("RegistryCache resource ready state processing")
-
-	// check if webhook is still ready
-	if err := r.checkWebhookIsReady(); err != nil {
-		r.Event(objectInstance, "Error", "Webhook not ready", err.Error())
-		logger.Info("Webhook server not ready, setting state to Error")
-		status := getInstanceStatus(objectInstance)
-		return r.setStatusForObjectInstance(ctx, objectInstance, status.
-			WithState(v1beta1.StateError).
-			WithInstallConditionStatus(metav1.ConditionFalse, objectInstance.GetGeneration()))
+// stay in current state until we are ready
+func (r *RegistryCacheReconciler) attemptToBecomeReady(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
+	if err := r.Checker(nil); err != nil {
+		logger := log.FromContext(ctx)
+		logger.Info("Webhook server not ready!")
+		return nil
 	}
-	return nil
+	return r.setInstanceStatus(ctx, objectInstance, v1beta1.StateReady, metav1.ConditionTrue)
 }
 
-func (r *RegistryCacheReconciler) checkWebhookIsReady() error {
-	return r.Checker(nil)
-	//return nil
+func getInstanceStatus(objectInstance *v1beta1.RegistryCache) v1beta1.RegistryCacheStatus {
+	return objectInstance.Status
+}
+
+func (r *RegistryCacheReconciler) setInstanceStatus(ctx context.Context, objectInstance *v1beta1.RegistryCache, state v1beta1.State, condStatus metav1.ConditionStatus) error {
+	status := getInstanceStatus(objectInstance)
+	return r.setStatusForObjectInstance(ctx, objectInstance, status.
+		WithState(state).
+		WithInstallConditionStatus(condStatus, objectInstance.GetGeneration()))
 }
 
 func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *v1beta1.RegistryCache, status *v1beta1.RegistryCacheStatus) error {

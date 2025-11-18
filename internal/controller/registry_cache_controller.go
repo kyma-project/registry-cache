@@ -34,10 +34,11 @@ import (
 )
 
 const (
-	requeueInterval = time.Second * 5
-	finalizer       = "registry-cache.kyma-project.io/finalizer"
-	debugLogLevel   = 2
-	fieldOwner      = "registry-cache.kyma-project.io/owner"
+	requeueInterval       = time.Second * 5
+	requeueHealthInterval = time.Second * 30
+	finalizer             = "registry-cache.kyma-project.io/finalizer"
+	debugLogLevel         = 2
+	fieldOwner            = "registry-cache.kyma-project.io/owner"
 )
 
 type RegistryCacheReconciler struct {
@@ -92,7 +93,7 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if instance.GetDeletionTimestamp().IsZero() {
 		if controllerutil.AddFinalizer(&instance, finalizer) {
 			logger.Info("Adding finalizer")
-			return ctrl.Result{}, r.ssa(ctx, &instance)
+			return ctrl.Result{RequeueAfter: requeueInterval}, r.ssa(ctx, &instance)
 		}
 	}
 
@@ -104,9 +105,9 @@ func (r *RegistryCacheReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	case v1beta1.StateDeleting:
 		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleDeletingState(ctx, &instance)
 	case v1beta1.StateError:
-		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleErrorState(ctx, &instance)
+		return ctrl.Result{RequeueAfter: requeueHealthInterval}, r.HandleErrorState(ctx, &instance)
 	case v1beta1.StateReady, v1beta1.StateWarning:
-		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, &instance)
+		return ctrl.Result{RequeueAfter: requeueHealthInterval}, r.HandleReadyState(ctx, &instance)
 	}
 	return ctrl.Result{}, nil
 }
@@ -120,8 +121,8 @@ func (r *RegistryCacheReconciler) HandleInitialState(ctx context.Context, object
 	logger := log.FromContext(ctx)
 	logger.Info("RegistryCache resource init state processing")
 
-	status := getInstanceStatus(objectInstance)
 	logger.Info("Setting state to processing")
+	status := getInstanceStatus(objectInstance)
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
 		WithState(v1beta1.StateProcessing).
 		WithInstallConditionStatus(metav1.ConditionUnknown, objectInstance.GetGeneration()))
@@ -135,6 +136,7 @@ func (r *RegistryCacheReconciler) HandleProcessingState(ctx context.Context, obj
 
 	if err := r.checkWebhookIsReady(); err != nil {
 		// stay in Processing state until we are ready
+		logger.Info("Webhook server not ready, yet")
 		return nil
 	}
 
@@ -190,7 +192,7 @@ func (r *RegistryCacheReconciler) HandleReadyState(ctx context.Context, objectIn
 	// check if webhook is still ready
 	if err := r.checkWebhookIsReady(); err != nil {
 		r.Event(objectInstance, "Error", "Webhook not ready", err.Error())
-		logger.Info("Setting state to Error")
+		logger.Info("Webhook server not ready, setting state to Error")
 		status := getInstanceStatus(objectInstance)
 		return r.setStatusForObjectInstance(ctx, objectInstance, status.
 			WithState(v1beta1.StateError).
@@ -200,8 +202,8 @@ func (r *RegistryCacheReconciler) HandleReadyState(ctx context.Context, objectIn
 }
 
 func (r *RegistryCacheReconciler) checkWebhookIsReady() error {
-	// check if webhook server is ready, make http request and call checker
 	return r.Checker(nil)
+	//return nil
 }
 
 func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *v1beta1.RegistryCache, status *v1beta1.RegistryCacheStatus) error {

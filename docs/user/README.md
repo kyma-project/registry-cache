@@ -79,6 +79,7 @@ echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 -w0
 
 ```bash
 kubectl create -f - <<EOF
+apiVersion: core.kyma-project.io/v1beta1
 kind: RegistryCacheConfig
 metadata:
   name: config
@@ -107,9 +108,16 @@ Following table describes all fields in the `RegistryCacheConfig` resource that 
 | `spec.http.tls`                | Indicates whether TLS is enabled for the HTTP server of the registry cache.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |   | N/A           | No       |
 
 ## Validation of provided Registry Cache configuration
+
 After applying the `RegistryCacheConfig` resource to your Kyma Runtime cluster, the registry cache webhook validates the configuration before it affects cluster configuration.  
+If the configura the `RegistryCacheConfig` resource to your Kyma Runtime cluster, the registry cache webhook validates the configuration before it affects cluster configuration.  
 If the configuration is valid, the resource status will be updated to `Ready` and the caching layer will be configured accordingly.
 If there are any issues with the configuration, the status will be updated to `Error`, and an error message will be provided in the status conditions.
+
+Example: invalid upstream URL
+
+Example: 
+
 
 You can validate if the configuration was applied successfully by checking the status of the resource.
 

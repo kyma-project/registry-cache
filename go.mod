@@ -91,6 +91,6 @@ require (
 replace (
 	golang.org/x/net => golang.org/x/net v0.47.0
 	golang.org/x/sys => golang.org/x/sys v0.37.0
-	golang.org/x/text => golang.org/x/text v0.30.0
+	golang.org/x/text => golang.org/x/text v0.31.0
 	golang.org/x/tools => golang.org/x/tools v0.39.0
 )

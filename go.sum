@@ -48,8 +48,8 @@ github.com/gardener/etcd-druid/api v0.33.0 h1:YwgsYYldaLig2laJMAAMX/dg9/XsQx/LPz
 github.com/gardener/etcd-druid/api v0.33.0/go.mod h1:Qpl1PDJ+bKa6OPWk4o7WBzvjPqZc/CxIXbiTkdRhCrg=
 github.com/gardener/gardener v1.132.1 h1:RiKgBWTkdOip3PJoJmG/LQVZ1laupoWqNQAty3OFa2k=
 github.com/gardener/gardener v1.132.1/go.mod h1:1ZFdXjQhI92e5xgfAdy2g1dEonzCgnucheAOZktwRV8=
-github.com/gardener/gardener-extension-registry-cache v0.18.0 h1:PQqkX4fIbRwWGfXdFvM5dx1tOlndP5y43H5hlUJgcHE=
-github.com/gardener/gardener-extension-registry-cache v0.18.0/go.mod h1:h2BwDf3xYB1glxuO/9sIiCRgv29Xes1CY5uS4xsxTEk=
+github.com/gardener/gardener-extension-registry-cache v0.19.0 h1:SyKBYjFXfSHq9c0faEtJsVi5u6bp1pE49UB3HlMpn3c=
+github.com/gardener/gardener-extension-registry-cache v0.19.0/go.mod h1:KrEQmEyPgkdNTFBoycMEoYYcDZjtQ7WfxCdE2HPZDKw=
 github.com/gardener/machine-controller-manager v0.60.2 h1:lY6z67lDlwl9dQUEmlJbrmpxWK10o/rVRUu4JB7xK4U=
 github.com/gardener/machine-controller-manager v0.60.2/go.mod h1:8eE1qLztrWIbOM71mHSQGaC6Q+pl5lvOyN08qP39D7o=
 github.com/gkampitakis/ciinfo v0.3.2 h1:JcuOPk8ZU7nZQjdUhctuhQofk7BGHuIy0c9Ez8BNhXs=

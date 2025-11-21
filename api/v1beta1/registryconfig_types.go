@@ -208,3 +208,7 @@ func (rc *RegistryCacheConfig) updateStatusReady(conditionType ConditionType, re
 
 	meta.SetStatusCondition(&rc.Status.Conditions, condition)
 }
+
+func init() {
+	SchemeBuilder.Register(&RegistryCacheConfig{}, &RegistryCacheConfigList{})
+}

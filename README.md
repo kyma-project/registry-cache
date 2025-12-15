@@ -79,7 +79,7 @@ Then, click on "Modify Module" button and select "Registry Cache" from the list:
     kubectl apply -f config/samples/default_registry_cache_cr.yaml
     ```
 
-- Delete a Serverless instance.
+- Delete a Registry Cache instance.
 
     ```bash
     kubectl delete -f config/samples/default_registry_cache_cr.yaml

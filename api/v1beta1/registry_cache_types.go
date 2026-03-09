@@ -41,8 +41,8 @@ type RegistryCache struct {
 }
 
 var (
-	ConditionTypeInstallation = "Installation"
-	ConditionReasonReady      = "Ready"
+	ConditionTypeStartup = "Starting"
+	ConditionReasonReady = "Ready"
 )
 
 // RegistryCacheSpec defines the desired state of RegistryCache
@@ -96,13 +96,13 @@ func (s *RegistryCacheStatus) WithInstallConditionStatus(status metav1.Condition
 		s.Conditions = make([]metav1.Condition, 0, 1)
 	}
 
-	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)
+	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeStartup)
 
 	if condition == nil {
 		condition = &metav1.Condition{
-			Type:    ConditionTypeInstallation,
+			Type:    ConditionTypeStartup,
 			Reason:  ConditionReasonReady,
-			Message: "installation is ready and resources can be used",
+			Message: "Starting module",
 		}
 	}
 
@@ -118,4 +118,8 @@ type RegistryCacheList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RegistryCache `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&RegistryCache{}, &RegistryCacheList{})
 }

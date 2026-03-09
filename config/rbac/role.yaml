@@ -7,11 +7,32 @@ rules:
 - apiGroups:
   - core.kyma-project.io
   resources:
+  - registrycaches/finalizers
+  - registrycaches/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+    - core.kyma-project.io
+  resources:
+    - registrycaches
+  verbs:
+    - get
+    - list
+    - patch
+    - watch
+    - update
+- apiGroups:
+  - core.kyma-project.io
+  resources:
   - registrycacheconfigs
   verbs:
   - get
   - list
-  - patch
   - watch
 - apiGroups:
     - admissionregistration.k8s.io
@@ -26,3 +47,10 @@ rules:
     - secrets
   verbs:
     - get
+- apiGroups:
+    - ""
+  resources:
+    - events
+  verbs:
+    - create
+    - patch

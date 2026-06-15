@@ -68,7 +68,7 @@ jobs:
           IMG: ${{ needs.setup.outputs.image_registry }}:${{ needs.setup.outputs.tag_experimental }}
 
       - name: Create Release and Generate Notes
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: | 
             ./config/crd/crd-docs.md

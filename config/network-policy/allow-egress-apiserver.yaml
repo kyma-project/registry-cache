@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kyma-project.io--registry-cache-to-apiserver
+  namespace: system
+  labels:
+    app.kubernetes.io/name: registry-cache
+    app.kubernetes.io/managed-by: kustomize
+    purpose: apiserver
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: registry-cache
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 443
+          protocol: TCP

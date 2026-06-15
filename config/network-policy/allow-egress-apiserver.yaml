@@ -10,6 +10,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
+      control-plane: controller-manager
       app.kubernetes.io/name: registry-cache
   policyTypes:
     - Egress

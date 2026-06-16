@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kyma-project.io--registry-cache-allow-metrics
+  namespace: system
+  labels:
+    app.kubernetes.io/name: registry-cache
+    app.kubernetes.io/managed-by: kustomize
+    purpose: metrics
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: registry-cache
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              networking.kyma-project.io/metrics-scraping: allowed
+      ports:
+        - port: 8443
+          protocol: TCP

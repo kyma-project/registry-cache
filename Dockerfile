@@ -15,6 +15,7 @@ RUN go mod download
 COPY cmd/main.go cmd/main.go
 COPY api/ api/
 COPY internal/ internal/
+COPY manifests.yaml manifests.yaml
 
 # Build
 # the GOARCH has no default value to allow the binary to be built according to the host where the command
@@ -27,7 +28,8 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} GOFIPS140=v1.0.0 
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/manager .
+COPY --chown=65532:65532 --from=builder /workspace/manager .
+COPY --chown=65532:65532 --from=builder /workspace/manifests.yaml .
 USER 65532:65532
 
 ENV GODEBUG=fips140=only,tlsmlkem=0

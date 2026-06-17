@@ -1,13 +1,3 @@
-> **NOTE:** This is a general template that you can use for a project README.md. Except for the mandatory sections, use only those sections that suit your use case but keep the proposed section order.
->
-> Mandatory sections: 
-> - `Overview`
-> - `Prerequisites`, if there are any requirements regarding hard- or software
-> - `Installation`
-> - `Contributing` - do not change this!
-> - `Code of Conduct` - do not change this!
-> - `Licensing` - do not change this!
->
 [![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/registry-cache)](https://api.reuse.software/info/github.com/kyma-project/registry-cache)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kyma-project/registry-cache)](https://goreportcard.com/report/github.com/kyma-project/registry-cache)
 [![unit tests](https://badgers.space/github/checks/kyma-project/registry-cache/main/unit-tests)](https://github.com/kyma-project/registry-cache/actions/workflows/unit-tests.yaml)
@@ -15,41 +5,92 @@
 [![golangci lint](https://badgers.space/github/checks/kyma-project/registry-cache/main/golangci-lint)](https://github.com/kyma-project/registry-cache/actions/workflows/lint.yaml)
 [![latest release](https://badgers.space/github/release/kyma-project/registry-cache)](https://github.com/kyma-project/registry-cache/releases/latest)
 
-# {Project Title}
-<!--- mandatory --->
-> Modify the title and insert the name of your project. Use Heading 1 (H1).
+# Registry Cache Kyma Module
+
+This repository contains the source code for the Registry Cache Kyma Module.
 
 ## Overview
-<!--- mandatory section --->
 
-> Provide a description of the project's functionality.
->
-> If it is an example README.md, describe what the example illustrates.
+The Registry Cache Kyma module adds a possibility to enable and configure a caching layer for container image registries used in your BTP managed Kyma Runtimes.  
+This feature reduces the amount of outbound traffic from your runtimes to public registries, improving performance and reliability of image pulls.  
+Additionally, it allows to configure access to private registries by providing credentials that will be used by the caching layer to authenticate against those registries.  
+
+For information how to use registry cache configuration, see the [user documentation](./docs/user/Readme.md).
+
+**Note:** 
+> As this feature is implemented as part of Kyma Control Plane it is available only for BTP managed Kyma Runtimes.  
+> Installing his module in self-managed Kyma Runtime cluster and providing registry cache configuration will have no effect.
 
 ## Prerequisites
 
-> List the requirements to run the project or example.
+- A managed Kyma Runtime instance running on BTP platform.
+- Access to Kyma console (Busola) or kubectl with kubeconfig for the Kyma Runtime cluster.
 
-## Installation
+## Installation with kubectl
 
-> Explain the steps to install your project. If there are multiple installation options, mention the recommended one and include others in a separate document. Create an ordered list for each installation task.
->
-> If it is an example README.md, describe how to build, run locally, and deploy the example. Format the example as code blocks and specify the language, highlighting where possible. Explain how you can validate that the example ran successfully. For example, define the expected output or commands to run which check a successful deployment.
->
-> Add subsections (H3) for better readability.
+Enable the Registry Cache module in your Kyma cluster with kubectl by applying a custom resource.  
+Apply the following script to install Registry Cache module operator:
 
-## Usage
+```bash
+kubectl apply -f https://github.com/kyma-project/registry-cache/releases/latest/download/registry-cache.yaml
+```
+To get Registry Cache configuration types installed, apply the sample Registry Cache CR:
 
-> Explain how to use the project. You can create multiple subsections (H3). Include the instructions or provide links to the related documentation.
+```bash
+kubectl apply -f https://github.com/kyma-project/registry-cache/releases/latest/download/default_registry_cache_cr.yaml
+``` 
+
+## Installation with Busola
+To enable the Registry Cache module in your Kyma cluster with Busola find the list of "Modules" section in the main navigation panel.    
+Then, click on "Modify Module" button and select "Registry Cache" from the list:
 
 ## Development
 
-> Add instructions on how to develop the project or example. It must be clear what to do and, for example, how to trigger the tests so that other contributors know how to make their pull requests acceptable. Include the instructions or provide links to related documentation.
+### Prerequisites
+
+- Access to a Kubernetes cluster
+- [Go](https://go.dev/)
+- [k3d](https://k3d.io/)
+- [Docker](https://www.docker.com/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Kubebuilder](https://book.kubebuilder.io/)
+- [yq](https://mikefarah.gitbook.io/yq)
+
+### Installation in the k3d Cluster Using Make Targets
+
+1. Clone the project.
+
+    ```bash
+    git clone https://github.com/kyma-project/registry-cache.git && cd registry-cache/
+    ```
+
+2. Create a new k3d cluster and run registry-cache from the main branch:
+
+    ```bash
+    k3d cluster create test-cluster
+    make deploy
+    ```
+
+### Using Registry Cache Operator
+
+- Create a Registry Cache instance.
+
+    ```bash
+    kubectl apply -f config/samples/default_registry_cache_cr.yaml
+    ```
+
+- Delete a Registry Cache instance.
+
+    ```bash
+    kubectl delete -f config/samples/default_registry_cache_cr.yaml
+    ```
 
 ## Contributing
+
+For information on implementation details of registry cache module, see the [contributor documentation](./docs/contributor/Readme.md).
 <!--- mandatory section - do not change this! --->
 
-See the [Contributing Rules](CONTRIBUTING.md).
+For information how to contribute see the [Contributing Rules](CONTRIBUTING.md).
 
 ## Code of Conduct
 <!--- mandatory section - do not change this! --->

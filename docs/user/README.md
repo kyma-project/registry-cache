@@ -21,7 +21,13 @@ It also supports access to private registries by allowing you to provide credent
 - The Registry Cache module installed on your Kyma Runtime cluster.
 
 ## Basic Configuration
-To configure the Registry Cache, create a `RegistryCacheConfig` custom resource:
+`RegistryCacheConfig` is a namespace-scoped resource and can be created in any namespace.
+
+To configure the Registry Cache, create a `RegistryCacheConfig` custom resource. The following example uses the `test` namespace — create it first if it doesn't exist:
+
+```bash
+kubectl create namespace test
+```
 
 ```bash
 kubectl create -f - <<EOF 
@@ -57,7 +63,13 @@ export USERNAME=<your username>
 export PASSWORD=<your password>
 ```
 
-2. Create an immutable secret named `rc-secret` in the `test` namespace:
+2. Create the namespace if it doesn't exist:
+
+```bash
+kubectl create namespace test
+```
+
+3. Create an immutable secret named `rc-secret` in the `test` namespace:
 
 ```bash
 kubectl create -f - <<EOF
@@ -81,7 +93,7 @@ To base64-encode the service account key, run:
 echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 -w0
 ```
 
-3. Apply the Registry Cache configuration referencing the created secret:
+4. Apply the Registry Cache configuration referencing the created secret:
 
 ```bash
 kubectl create -f - <<EOF

@@ -8,6 +8,7 @@ This document describes how to configure the Registry Cache for your Kyma Runtim
 - [Providing Credentials for Upstream Repository](#upstream-credentials.md)
 - [Advanced Configuration](#advanced-config.md)
 - [Validation of Registry Cache Configuration](#validation.md)
+- [Managing Registry Cache Configuration](#managing-registry-cache-configuration)
 - [Troubleshooting](#troubleshooting.md)
 
 ## Introduction
@@ -129,8 +130,8 @@ The following table describes all fields in the `RegistryCacheConfig` resource:
 ## Validation of Registry Cache Configuration
 
 After applying the `RegistryCacheConfig` resource, the registry cache webhook validates the configuration before it takes effect.
-If the configuration is valid, the resource status is updated to `Ready` and the caching layer is configured.
-If there are issues, the status is updated to `Error` and an error message is provided in the status conditions.
+If the configuration is valid, the resource status transitions from `Pending` to `Ready` and the caching layer is configured.
+If there are issues, the status transitions from `Pending` to `Error` and an error message is provided in the status conditions.
 
 Example error message:
 ```
@@ -151,10 +152,40 @@ The following table describes the validation rules for each field:
 | `spec.proxy.httpsProxy`        | Must be a valid URL starting with `http://` or `https://`.                                                                                                                    | N/A     |
 | `spec.http.tls`                | Must be a valid boolean indicating whether TLS is enabled.                                                                                                                    | N/A     |
 
+## Managing Registry Cache Configuration
+
+### Listing Registry Cache Configurations
+
+To list all `RegistryCacheConfig` resources across all namespaces, run:
+
+```bash
+kubectl get registrycacheconfig -A
+```
+
+To list resources in a specific namespace, run:
+
+```bash
+kubectl get registrycacheconfig -n <namespace>
+```
+
+### Deleting a Registry Cache Configuration
+
+To delete a `RegistryCacheConfig` resource, run:
+
+```bash
+kubectl delete registrycacheconfig <name> -n <namespace>
+```
+
+For example:
+
+```bash
+kubectl delete registrycacheconfig config -n test
+```
+
 ## Troubleshooting
 
 The Registry Cache configuration is validated before being applied to the cluster. Invalid configuration will be rejected by the webhook.
-If the configuration is valid but the Registry Cache setup fails on the KCP side, the `RegistryCacheConfig` resource status is updated to `Error` with an error message in the status conditions. In this case, contact the Kyma support team for assistance.
+If the configuration is valid but the Registry Cache setup fails on the KCP side, the `RegistryCacheConfig` resource status transitions to `Error` with an error message in the status conditions. In this case, contact the Kyma support team for assistance.
 
 ## Useful Links
 - [Gardener Registry Cache documentation](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/)

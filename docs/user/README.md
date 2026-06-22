@@ -187,6 +187,24 @@ kubectl delete registrycacheconfig config -n test
 The Registry Cache configuration is validated before being applied to the cluster. Invalid configuration will be rejected by the webhook.
 If the configuration is valid but the Registry Cache setup fails on the KCP side, the `RegistryCacheConfig` resource status transitions to `Error` with an error message in the status conditions. In this case, contact the Kyma support team for assistance.
 
+### Diagnosing Incorrect Credentials
+
+The upstream registry does not return an explicit authentication error when credentials are wrong. Instead, image pulls fail with `404 manifest unknown`, which is indistinguishable from a missing image at the log level.
+
+If image pulls fail consistently with `404` errors and you know the image exists in the upstream registry, check the registry cache pod logs for the affected upstream:
+
+```bash
+kubectl logs -n kube-system -l app=registry-cache,upstream=<upstream-host> --tail=50
+```
+
+A pull failure due to incorrect credentials looks like:
+
+```
+level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=<tag>" err.message="manifest unknown" ... http.response.status=404
+```
+
+If you see this pattern repeating, verify that the credentials in the referenced secret are correct and that the secret is up to date.
+
 ## Useful Links
 - [Gardener Registry Cache documentation](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/)
 - [Gardener Registry Cache GitHub repository](https://github.com/gardener/gardener-extension-registry-cache/tree/main)

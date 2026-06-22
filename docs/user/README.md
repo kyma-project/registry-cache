@@ -16,6 +16,8 @@ The Registry Cache Kyma module adds a caching layer for container image registri
 This reduces outbound traffic to public registries, improving performance and reliability of image pulls.
 It also supports access to private registries by allowing you to provide credentials for the caching layer to use when authenticating against those registries.
 
+> The Registry Cache feature is built on top of [Gardener's Registry Cache extension](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/).
+
 ## Prerequisites
 - A managed Kyma Runtime instance running on the BTP platform.
 - Administrative access to the Kyma Runtime with kubeconfig and the `kubectl` tool.
@@ -218,6 +220,3 @@ level=error msg="response completed with error" err.code="manifest unknown" err.
 
 If you see this pattern repeating, verify that the credentials in the referenced secret are correct and that the secret is up to date.
 
-## Useful Links
-- [Gardener Registry Cache documentation](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/)
-- [Gardener Registry Cache GitHub repository](https://github.com/gardener/gardener-extension-registry-cache/tree/main)

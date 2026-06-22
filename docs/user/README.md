@@ -84,8 +84,8 @@ metadata:
 type: Opaque
 immutable: true
 data:
-  username: $(echo -n $USERNAME | base64 -w0)
-  password: $(echo -n $PASSWORD | base64 -w0)
+  username: $(echo -n $USERNAME | base64 | tr -d '\n')
+  password: $(echo -n $PASSWORD | base64 | tr -d '\n')
 EOF
 ```
 
@@ -93,7 +93,7 @@ For Artifact Registry, use `_json_key` as the username and the service account k
 To base64-encode the service account key, run:
 
 ```bash
-echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 -w0
+echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 | tr -d '\n'
 ```
 
 4. Apply the Registry Cache configuration referencing the created secret:

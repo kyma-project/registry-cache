@@ -37,7 +37,7 @@ kubectl create -f - <<EOF
 apiVersion: core.kyma-project.io/v1beta1
 kind: RegistryCacheConfig
 metadata:
-  name: config
+  name: config1
   namespace: test
 spec:
   upstream: docker.io
@@ -89,7 +89,7 @@ data:
 EOF
 ```
 
-For Artifact Registry, use `_json_key` as the username and the service account key in JSON format as the password.
+For [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/authentication), use `_json_key` as the username and the service account key in JSON format as the password.
 To base64-encode the service account key, run:
 
 ```bash
@@ -103,10 +103,10 @@ kubectl create -f - <<EOF
 apiVersion: core.kyma-project.io/v1beta1
 kind: RegistryCacheConfig
 metadata:
-  name: config
+  name: config2
   namespace: test
 spec:
-  upstream: docker.io
+  upstream: <protected registry URL>
   secretReferenceName: rc-secret
   volume:
     size: 100Gi

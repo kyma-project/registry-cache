@@ -111,6 +111,13 @@ spec:
 EOF
 ```
 
+**Note:**
+> When using a private registry, the same credentials must be stored in **two** Kubernetes Secrets:
+> - The secret referenced in `spec.secretReferenceName` — used by the registry cache to authenticate against the upstream registry when pulling images to cache.
+> - An `imagePullSecret` on each workload — used by containerd to authenticate directly against the upstream registry as a fallback when the registry cache is unavailable.
+>
+> Do not remove the `imagePullSecret` from your workloads when configuring credentials for the registry cache. If the cache is unavailable, containerd falls back to the upstream registry and requires the credentials directly.
+
 ## Advanced Configuration
 
 The following table describes all fields in the `RegistryCacheConfig` resource:
@@ -194,7 +201,13 @@ The upstream registry does not return an explicit authentication error when cred
 If image pulls fail consistently with `404` errors and you know the image exists in the upstream registry, check the registry cache pod logs for the affected upstream:
 
 ```bash
-kubectl logs -n kube-system -l app=registry-cache,upstream=<upstream-host> --tail=50
+kubectl logs -n kube-system -l app=registry-cache --tail=50
+```
+
+To filter logs for a specific upstream, use the pod name pattern (pods are named after the upstream host):
+
+```bash
+kubectl logs -n kube-system $(kubectl get pods -n kube-system -o name | grep registry-<upstream-host>) --tail=50
 ```
 
 A pull failure due to incorrect credentials looks like:

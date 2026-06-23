@@ -1,32 +1,26 @@
-# Registry Cache Module User Documentation
+# Registry Cache Module
 
-This document describes how to configure the Registry Cache for your Kyma Runtime cluster.
+Learn how to configure the Registry Cache module for your Kyma runtime cluster.
 
-## Table of Contents
-- [Introduction](#introduction)
-- [Providing Basic Configuration](#basic-config.md)
-- [Providing Credentials for Upstream Repository](#upstream-credentials.md)
-- [Advanced Configuration](#advanced-config.md)
-- [Validation of Registry Cache Configuration](#validation.md)
-- [Managing Registry Cache Configuration](#managing-registry-cache-configuration)
-- [Troubleshooting](#troubleshooting.md)
 
-## Introduction
-The Registry Cache Kyma module adds a caching layer for container image registries used in your BTP managed Kyma Runtimes.
+## What Is Registry Cache?
+The Registry Cache Kyma module adds a caching layer for container image registries used in your SAP BTP, Kyma runtime instances.
 This reduces outbound traffic to public registries, improving performance and reliability of image pulls.
 It also supports access to private registries by allowing you to provide credentials for the caching layer to use when authenticating against those registries.
 
-> The Registry Cache feature is built on top of [Gardener's Registry Cache extension](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/).
+
+> ### Note:
+> The Registry Cache module is built on top of [Gardener's Registry Cache extension](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/).
 
 ## Prerequisites
-- A managed Kyma Runtime instance running on the BTP platform.
-- Administrative access to the Kyma Runtime with kubeconfig and the `kubectl` tool.
-- The Registry Cache module installed on your Kyma Runtime cluster.
+- A SAP BTP, Kyma runtime instance running on the BTP platform.
+- Administrative access to the Kyma runtime with kubeconfig and the `kubectl` tool.
+- The Registry Cache module installed on your Kyma cluster.
 
 ## Basic Configuration
 `RegistryCacheConfig` is a namespace-scoped resource and can be created in any namespace.
 
-To configure the Registry Cache, create a `RegistryCacheConfig` custom resource. The following example uses the `test` namespace — create it first if it doesn't exist:
+To configure Registry Cache, create a `RegistryCacheConfig` custom resource (CR). The following example uses the `test` namespace — create it first if it doesn't exist:
 
 ```bash
 kubectl create namespace test
@@ -46,18 +40,18 @@ spec:
 EOF
 ```
 
-Once applied, the Kyma Control Plane processes the resource and configures a caching layer for the specified upstream registry (in this case `docker.io`).
-The `volume.size` field specifies the size of the persistent volume used to store cached images.
+Once applied, Kyma Control Plane (KCP) processes the resource and configures a caching layer for the specified upstream registry (in this case, `docker.io`).
+The **volume.size** field specifies the size of the persistent volume used to store cached images.
 
 You can create multiple `RegistryCacheConfig` resources to cache different upstream registries. Each resource must have a unique name, and each upstream registry must be unique across all resources in the cluster.
 
 ## Providing Credentials for Upstream Repository
 
-If the upstream registry requires authentication, create a Kubernetes Secret in the same namespace as the `RegistryCacheConfig` resource and reference it in the `spec.secretReferenceName` field.
-The secret must be immutable and of type `generic`.
+If the upstream registry requires authentication, create a Kubernetes Secret in the same namespace as the `RegistryCacheConfig` resource and reference it in the **spec.secretReferenceName** field.
+The Secret must be immutable and of type `generic`.
 
-**Note:**
-> The credential secret must exist on the cluster **before** applying the `RegistryCacheConfig` resource.
+> ### Note:
+> The credential Secret must exist on the cluster **before** applying the `RegistryCacheConfig` resource.
 
 1. Set environment variables with the upstream registry credentials:
 
@@ -72,7 +66,7 @@ export PASSWORD=<your password>
 kubectl create namespace test
 ```
 
-3. Create an immutable secret named `rc-secret` in the `test` namespace:
+3. Create an immutable Secret named `rc-secret` in the `test` namespace:
 
 ```bash
 kubectl create -f - <<EOF
@@ -96,7 +90,7 @@ To base64-encode the service account key, run:
 echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 | tr -d '\n'
 ```
 
-4. Apply the Registry Cache configuration referencing the created secret:
+4. Apply the Registry Cache configuration referencing the created Secret:
 
 ```bash
 kubectl create -f - <<EOF
@@ -113,12 +107,12 @@ spec:
 EOF
 ```
 
-**Note:**
+> ### Note:
 > When using a private registry, the same credentials must be stored in **two** Kubernetes Secrets:
-> - The secret referenced in `spec.secretReferenceName` — used by the registry cache to authenticate against the upstream registry when pulling images to cache.
-> - An `imagePullSecret` on each workload — used by containerd to authenticate directly against the upstream registry as a fallback when the registry cache is unavailable.
+> - The Secret referenced in **spec.secretReferenceName** — used by Registry Cache to authenticate against the upstream registry when pulling images to cache.
+> - An `imagePullSecret` on each workload — used by containerd to authenticate directly against the upstream registry as a fallback when Registry Cache is unavailable.
 >
-> Do not remove the `imagePullSecret` from your workloads when configuring credentials for the registry cache. If the cache is unavailable, containerd falls back to the upstream registry and requires the credentials directly.
+> Do not remove the `imagePullSecret` from your workloads when configuring credentials for Registry Cache. If the cache is unavailable, containerd falls back to the upstream registry and requires the credentials directly.
 
 ## Advanced Configuration
 
@@ -138,7 +132,7 @@ The following table describes all fields in the `RegistryCacheConfig` resource:
 
 ## Validation of Registry Cache Configuration
 
-After applying the `RegistryCacheConfig` resource, the registry cache webhook validates the configuration before it takes effect.
+After applying the `RegistryCacheConfig` resource, the Registry Cache webhook validates the configuration before it takes effect.
 If the configuration is valid, the resource status transitions from `Pending` to `Ready` and the caching layer is configured.
 If there are issues, the status transitions from `Pending` to `Error` and an error message is provided in the status conditions.
 
@@ -200,19 +194,19 @@ If the configuration is valid but the Registry Cache setup fails on the KCP side
 
 The upstream registry does not return an explicit authentication error when credentials are wrong. Instead, image pulls fail with `404 manifest unknown`, which is indistinguishable from a missing image at the log level.
 
-If image pulls fail consistently with `404` errors and you know the image exists in the upstream registry, check the registry cache pod logs for the affected upstream:
+If image pulls fail consistently with `404` errors and you know the image exists in the upstream registry, check the Registry Cache Pod logs for the affected upstream:
 
 ```bash
 kubectl logs -n kube-system -l app=registry-cache --tail=50
 ```
 
-To filter logs for a specific upstream, use the pod name pattern (pods are named after the upstream host):
+To filter logs for a specific upstream, use the Pod name pattern (Pods are named after the upstream host):
 
 ```bash
 kubectl logs -n kube-system $(kubectl get pods -n kube-system -o name | grep registry-<upstream-host>) --tail=50
 ```
 
-A pull failure due to incorrect credentials looks like:
+A pull failure due to incorrect credentials looks similar to this one:
 
 ```
 level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=<tag>" err.message="manifest unknown" ... http.response.status=404

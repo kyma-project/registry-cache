@@ -1,103 +1,44 @@
-[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/registry-cache)](https://api.reuse.software/info/github.com/kyma-project/registry-cache)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kyma-project/registry-cache)](https://goreportcard.com/report/github.com/kyma-project/registry-cache)
-[![unit tests](https://badgers.space/github/checks/kyma-project/registry-cache/main/unit-tests)](https://github.com/kyma-project/registry-cache/actions/workflows/unit-tests.yaml)
-[![Coverage Status](https://coveralls.io/repos/github/kyma-project/registry-cache/badge.svg?branch=main)](https://coveralls.io/github/kyma-project/registry-cache?branch=main)
-[![golangci lint](https://badgers.space/github/checks/kyma-project/registry-cache/main/golangci-lint)](https://github.com/kyma-project/registry-cache/actions/workflows/lint.yaml)
-[![latest release](https://badgers.space/github/release/kyma-project/registry-cache)](https://github.com/kyma-project/registry-cache/releases/latest)
-
-# Registry Cache Kyma Module
-
-This repository contains the source code for the Registry Cache Kyma Module.
+# Docs
 
 ## Overview
 
-The Registry Cache Kyma module adds a possibility to enable and configure a caching layer for container image registries used in your BTP managed Kyma Runtimes.  
-This feature reduces the amount of outbound traffic from your runtimes to public registries, improving performance and reliability of image pulls.  
-Additionally, it allows to configure access to private registries by providing credentials that will be used by the caching layer to authenticate against those registries.
+The `docs` folder contains three subfolders - `user`, `contributor`, and `operator`[^*].
 
-For information how to use registry cache configuration, see the [user documentation](./docs/user/Readme.md).
+The `user` subfolder contains the end-user documentation, which is displayed on the [Kyma website](https://kyma-project.io/#/) and in the SAP Help Portal. Depending on your module needs, the subfolder must include overview, usage, or technical reference documents. To display the content on the website properly, create a `_sidebar.md` file in the `user` subfolder and list the documents it contains there. For more information on how to publish user documentation, follow [this guide](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/01-user-docs.md).
 
-**Note:**
-> As this feature is implemented as part of Kyma Control Plane it is available only for BTP managed Kyma Runtimes.  
-> Installing this module in self-managed Kyma Runtime cluster and providing registry cache configuration will have no effect.
+The `contributor` subfolder includes any developer-related documentation to help them manually install, develop, and operate a module.
 
-## Prerequisites
+The `operator` subfolder is mandatory only if your module/component is delivered to restricted markets. The subfolder includes documentation relevant to the respective operators.
 
-- A managed Kyma Runtime instance running on BTP platform.
-- Access to Kyma console (Busola) or kubectl with kubeconfig for the Kyma Runtime cluster.
+To have a common structure across all modules, all documents must be properly numbered according to the following structure:
 
-## Installation with kubectl
+> **NOTE:** It is suggested to use the following titles if you have the content that matches them; otherwise use your own, more suitable titles, or simply skip the ones you find irrelevant.
 
-Enable the Registry Cache module in your Kyma cluster with kubectl by applying a custom resource.  
-Apply the following script to install Registry Cache module operator:
+   - 00-xx-overview
+   - 01-xx-tutorial/configuration  
+   - 02-xx-usage  
+   - 03-xx-troubleshooting
 
-```bash
-kubectl apply -f https://github.com/kyma-project/registry-cache/releases/latest/download/registry-cache.yaml
-```
-To get Registry Cache configuration types installed, apply the sample Registry Cache CR:
+where `xx` is the number of the given document. For example:
 
-```bash
-kubectl apply -f https://github.com/kyma-project/registry-cache/releases/latest/download/default_registry_cache_cr.yaml
-``` 
+   ```bash
+   00-00-overview-telemetry-manager
+   00-10-overview-logs
+   00-20-overview-traces
+   00-30-overview-metrics
+   01-10-configure-logs 
+   01-20-configure-traces 
+   01-30-configure-metrics
+   02-10-use-logs
+   02-20-use-traces
+   02-30-use-metrics
+   (...)
+   ```
 
-## Installation with Busola
-To enable the Registry Cache module in your Kyma cluster with Busola find the list of "Modules" section in the main navigation panel.    
-Then, click on "Modify Module" button and select "Registry Cache" from the list:
+> **NOTE:** Before introducing [docsify](https://docsify.js.org/#/?id=docsify), we agreed to use the `10`, `20`, `30` numbering. It was to help maintain the proper order of docs if they were rendered automatically on the website. With docsify, you manually add the content to the `_sidebar.md` file, and docs are displayed in the order you add them. However, this numbering is still recommended to have the unified structure of the docs in the module repositories.
 
-## Development
+If you have other content that does not fit into the above topics, create your own 04-10-module-specific document(s).
 
-### Prerequisites
+You can divide your documentation into subfolders to avoid having too many documents in one `docs/user` or `docs/contributor` folder. For example, if you have many technical reference documents, you can create a `technical reference` subfolder in `docs/user` and keep relevant documentation there. Each subfolder in the `user` folder must have its own `_sidebar.md` file with the links to the main module page and the list of docs it contains.
 
-- Access to a Kubernetes cluster
-- [Go](https://go.dev/)
-- [k3d](https://k3d.io/)
-- [Docker](https://www.docker.com/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [Kubebuilder](https://book.kubebuilder.io/)
-- [yq](https://mikefarah.gitbook.io/yq)
-
-### Installation in the k3d Cluster Using Make Targets
-
-1. Clone the project.
-
-    ```bash
-    git clone https://github.com/kyma-project/registry-cache.git && cd registry-cache/
-    ```
-
-2. Create a new k3d cluster and run registry-cache from the main branch:
-
-    ```bash
-    k3d cluster create test-cluster
-    make deploy
-    ```
-
-### Using Registry Cache Operator
-
-- Create a Registry Cache instance.
-
-    ```bash
-    kubectl apply -f config/samples/default_registry_cache_cr.yaml
-    ```
-
-- Delete a Registry Cache instance.
-
-    ```bash
-    kubectl delete -f config/samples/default_registry_cache_cr.yaml
-    ```
-
-## Contributing
-
-For information on implementation details of registry cache module, see the [contributor documentation](./docs/contributor/Readme.md).
-<!--- mandatory section - do not change this! --->
-
-For information how to contribute see the [Contributing Rules](CONTRIBUTING.md).
-
-## Code of Conduct
-<!--- mandatory section - do not change this! --->
-
-See the [Code of Conduct](CODE_OF_CONDUCT.md) document.
-
-## Licensing
-<!--- mandatory section - do not change this! --->
-
-See the [license](./LICENSE) file.
+[^*]: Only in documentation for restricted markets.

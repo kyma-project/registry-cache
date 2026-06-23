@@ -15,13 +15,13 @@ The Registry Cache admission webhook server is unreachable or has not yet starte
 
 ## Solution
 
-1. Check that the controller pod is running:
+1. Check that the controller Pod is running:
 
    ```bash
    kubectl get pods -n kyma-system -l app=registry-cache
    ```
 
-2. Check the pod logs for errors:
+2. Check the Pod logs for errors:
 
    ```bash
    kubectl logs -n kyma-system -l app=registry-cache --tail=50

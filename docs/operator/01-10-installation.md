@@ -24,7 +24,7 @@
    kubectl apply -f <release-artifacts>/registry-cache.yaml
    ```
 
-3. Verify that the controller pod is running:
+3. Verify that the controller Pod is running:
 
    ```bash
    kubectl get pods -n kyma-system -l app=registry-cache

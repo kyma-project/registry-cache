@@ -205,7 +205,7 @@ The following table describes the validation rules for each field:
 |---|---|---|
 | **spec.upstream** | Must be a valid DNS-resolvable host (no scheme). Must be unique across all `RegistryCacheConfig` resources in the cluster. Port, if specified, must be in the range 1–65535. | None |
 | **spec.remoteURL** | Must have the format `<scheme><host>[:<port>]` where `<scheme>` is `https://` or `http://` and `<host>[:<port>]` corresponds to the upstream. Must be DNS resolvable. | None |
-| **spec.secretReferenceName** | The referenced secret must exist in the same namespace as the `RegistryCacheConfig` resource, be immutable, and contain exactly the `username` and `password` data keys. | None |
+| **spec.secretReferenceName** | The referenced Secret must exist in the same namespace as the `RegistryCacheConfig` resource, be immutable, and contain exactly the `username` and `password` data keys. | None |
 | **spec.volume.size** | Must be a positive value in a format recognized by Go's `resource.Quantity` (e.g. `10Gi`). Immutable after creation. | 10Gi |
 | **spec.volume.storageClassName** | The referenced storage class must be available. Immutable after creation. | None |
 | **spec.garbageCollection.ttl** | Must be in a format recognized by Go's `time.ParseDuration` (e.g. `24h`). Set to `0s` to disable garbage collection. Cannot be re-enabled once disabled. | 168h |

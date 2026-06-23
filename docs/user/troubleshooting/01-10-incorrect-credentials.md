@@ -28,4 +28,4 @@ The upstream registry returns `404` instead of `401` when credentials are incorr
    level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=<tag>" err.message="manifest unknown" ... http.response.status=404
    ```
 
-4. If you see this pattern repeating, verify that the credentials in the referenced secret are correct and that the secret is up to date.
+4. If you see this pattern repeating, verify that the credentials in the referenced Secret are correct and that the Secret is up to date.

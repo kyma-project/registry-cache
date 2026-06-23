@@ -15,7 +15,7 @@ The Registry Cache Kyma module adds a possibility to enable and configure a cach
 This feature reduces the amount of outbound traffic from your runtimes to public registries, improving performance and reliability of image pulls.  
 Additionally, it allows to configure access to private registries by providing credentials that will be used by the caching layer to authenticate against those registries.
 
-For information how to use registry cache configuration, see the [user documentation](./docs/user/Readme.md).
+For information how to use registry cache configuration, see the [user documentation](./docs/user/README.md).
 
 **Note:**
 > As this feature is implemented as part of Kyma Control Plane it is available only for BTP managed Kyma Runtimes.  

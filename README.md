@@ -26,20 +26,6 @@ For information how to use registry cache configuration, see the [user documenta
 - A managed Kyma Runtime instance running on BTP platform.
 - Access to Kyma console (Busola) or kubectl with kubeconfig for the Kyma Runtime cluster.
 
-## Installation with kubectl
-
-Enable the Registry Cache module in your Kyma cluster with kubectl by applying a custom resource.  
-Apply the following script to install Registry Cache module operator:
-
-```bash
-kubectl apply -f https://github.com/kyma-project/registry-cache/releases/latest/download/registry-cache.yaml
-```
-To get Registry Cache configuration types installed, apply the sample Registry Cache CR:
-
-```bash
-kubectl apply -f https://github.com/kyma-project/registry-cache/releases/latest/download/default_registry_cache_cr.yaml
-``` 
-
 ## Installation with Busola
 To enable the Registry Cache module in your Kyma cluster with Busola find the list of "Modules" section in the main navigation panel.    
 Then, click on "Modify Module" button and select "Registry Cache" from the list:
@@ -64,12 +50,33 @@ Then, click on "Modify Module" button and select "Registry Cache" from the list:
     git clone https://github.com/kyma-project/registry-cache.git && cd registry-cache/
     ```
 
-2. Create a new k3d cluster and run registry-cache from the main branch:
+2. Create a new k3d cluster:
 
     ```bash
     k3d cluster create test-cluster
-    make deploy
     ```
+
+3. Build the controller image and load it into the k3d cluster:
+
+    ```bash
+    make docker-build
+    k3d image import registry-cache-test:latest -c test-cluster
+    ```
+
+4. Apply the k3d installation manifest:
+
+    ```bash
+    make build-k3d-installer
+    kubectl create ns kyma-system
+    kubectl apply -f dist/k3d-install.yaml
+    ```
+
+5. Patch deployment:
+```
+kubectl patch deployment registry-cache-controller-manager -n kyma-system \
+    --type='json' \
+    -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"Never"}]'
+```
 
 ### Using Registry Cache Operator
 

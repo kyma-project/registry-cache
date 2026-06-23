@@ -17,7 +17,7 @@ For the architecture diagram, component overview, and state machine, see [Archit
 
 Both `/healthz` and `/readyz` endpoints delegate to `webhook.StartedChecker()`. The manager reports healthy only when the admission webhook TLS server is accepting connections.
 
-If the webhook becomes unavailable, the controller detects this on the next health-check reconcile (every 30s) and transitions the `RegistryCache` CR to `Error`.
+If the webhook becomes unavailable, the controller detects this on the next health-check reconcile (every 30s) and transitions the `RegistryCache` custom resource (CR) to `Error`.
 
 ## Certificate Rotation
 
@@ -25,6 +25,6 @@ If the webhook becomes unavailable, the controller detects this on the next heal
 
 ## Key Implementation Patterns
 
-- **Server-Side Apply (SSA)**: Status updates use `client.Apply` with field owner `registry-cache.kyma-project.io/owner` to avoid conflicts.
-- **Finalizer**: `registry-cache.kyma-project.io/finalizer` ensures cleanup logic runs before the `RegistryCache` CR is removed from the API server.
-- **Graceful shutdown**: Both the webhook server and the certificate watcher respect context cancellation on SIGTERM.
+- Server-Side Apply (SSA): Status updates use `client.Apply` with field owner `registry-cache.kyma-project.io/owner` to avoid conflicts.
+- Finalizer: `registry-cache.kyma-project.io/finalizer` ensures cleanup logic runs before the `RegistryCache` CR is removed from the API server.
+- Graceful shutdown: Both the webhook server and the certificate watcher respect context cancellation on SIGTERM.

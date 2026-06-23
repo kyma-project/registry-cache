@@ -2,11 +2,11 @@
 
 ## Custom Resources
 
-For the full parameter reference for both CRDs, see the [user documentation](../user/resources/).
+For the full parameter reference for both CustomResourceDefinitions (CRDs), see the [user documentation](../user/resources/).
 
 ### RegistryCache
 
-The `RegistryCache` CR is created and managed by the module lifecycle infrastructure. It tracks the health of the Registry Cache installation.
+The `RegistryCache` custom resource (CR) is created and managed by the module lifecycle infrastructure. It tracks the health of the Registry Cache installation.
 
 | Field | Description |
 |---|---|
@@ -21,7 +21,7 @@ kubectl get registrycache -A
 
 ### RegistryCacheConfig
 
-The `RegistryCacheConfig` CR is created by end users to configure a caching layer for a specific upstream registry. It is namespace-scoped.
+The `RegistryCacheConfig` custom resource (CR) is created by end users to configure a caching layer for a specific upstream registry. It is namespace-scoped.
 
 To list all `RegistryCacheConfig` resources across all namespaces:
 

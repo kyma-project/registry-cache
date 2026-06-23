@@ -8,7 +8,7 @@ kubectl get crd registrycacheconfigs.core.kyma-project.io -o yaml
 
 ## Overview
 
-A `RegistryCacheConfig` resource is created by the user to configure a caching layer for one upstream container image registry. Each resource targets a single upstream (for example, `docker.io` or `my-registry.example.com:5000`). Multiple `RegistryCacheConfig` resources can coexist in a cluster, but each upstream must be unique across all resources.
+A `RegistryCacheConfig` custom resource (CR) is created by the user to configure a caching layer for one upstream container image registry. Each resource targets a single upstream (for example, `docker.io` or `my-registry.example.com:5000`). Multiple `RegistryCacheConfig` resources can coexist in a cluster, but each upstream must be unique across all resources.
 
 The resource is namespace-scoped and can be created in any namespace.
 
@@ -76,4 +76,4 @@ These components use this CR:
 | Component | Description |
 |---|---|
 | `RegistryCacheConfig` webhook | Validates the CR on create and update before it is persisted. |
-| Kyma Control Plane | Processes the CR and configures the caching layer on the target cluster. |
+| Kyma Control Plane (KCP) | Processes the CR and configures the caching layer on the target cluster. |

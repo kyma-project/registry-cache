@@ -12,7 +12,7 @@
 
 <!-- TODO: SME input required — confirm the exact update procedure for the BTP operator environment, including release artifact paths -->
 
-1. Apply the updated CRD manifests:
+1. Apply the updated CustomResourceDefinition (CRD) manifests:
 
    ```bash
    kubectl apply -f <new-release-artifacts>/crds/
@@ -34,7 +34,7 @@
 
 ## Post-Update Steps
 
-1. Confirm that the `RegistryCache` CR returns to `Ready` state:
+1. Confirm that the `RegistryCache` custom resource (CR) returns to `Ready` state:
 
    ```bash
    kubectl get registrycache -A

@@ -44,7 +44,7 @@ The Registry Cache admission webhook server is unreachable or has not yet starte
 
 ### Symptom
 
-Admission requests are rejected with a TLS or certificate error, or the `RegistryCache` CR transitions to `Error` state shortly after a certificate renewal.
+Admission requests are rejected with a TLS or certificate error, or the `RegistryCache` custom resource (CR) transitions to `Error` state shortly after a certificate renewal.
 
 ### Cause
 

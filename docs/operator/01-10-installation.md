@@ -4,7 +4,7 @@
 
 <!-- TODO: SME input required — confirm required RBAC roles and access prerequisites -->
 
-- Access to the Kyma runtime cluster with sufficient RBAC permissions to apply CRDs and create cluster-scoped resources.
+- Access to the Kyma runtime cluster with sufficient RBAC permissions to apply CustomResourceDefinitions (CRDs) and create cluster-scoped resources.
 - `kubectl` configured to point to the target cluster.
 - The Registry Cache module release artifacts from the [releases page](https://github.com/kyma-project/registry-cache/releases).
 
@@ -32,7 +32,7 @@
 
 ## Post-Installation Steps
 
-1. Confirm that the `RegistryCache` CR reaches the `Ready` state:
+1. Confirm that the `RegistryCache` custom resource (CR) reaches the `Ready` state:
 
    ```bash
    kubectl get registrycache -A

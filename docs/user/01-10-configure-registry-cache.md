@@ -77,9 +77,9 @@ The Secret must be immutable and of type `generic`.
 
    3a. Base64-encode the service account key:
 
-   ```bash
-   export PASSWORD=$(echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 | tr -d '\n')
-   ```
+      ```bash
+      export PASSWORD=$(echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 | tr -d '\n')
+      ```
 
    3b. Create an immutable Secret with the encoded key as the password:
 

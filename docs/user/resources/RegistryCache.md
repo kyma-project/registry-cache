@@ -1,6 +1,6 @@
 # RegistryCache
 
-The `registrycaches.core.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to track the installation state of the Registry Cache module on a Kyma Runtime cluster. To get the up-to-date CRD and show the output in the `yaml` format, run this command:
+The `registrycaches.core.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to track the installation state of the Registry Cache module on a Kyma runtime cluster. To get the up-to-date CRD and show the output in the `yaml` format, run this command:
 
 ```bash
 kubectl get crd registrycaches.core.kyma-project.io -o yaml
@@ -8,9 +8,9 @@ kubectl get crd registrycaches.core.kyma-project.io -o yaml
 
 ## Overview
 
-A `RegistryCache` resource is created automatically by the module lifecycle manager when the Registry Cache module is installed on a Kyma Runtime cluster. You do not create or delete this resource directly — it is managed by the module lifecycle infrastructure.
+A `RegistryCache` resource is created automatically by the module lifecycle manager when the Registry Cache module is installed on a Kyma runtime cluster. You do not create or delete this resource directly — it is managed by the module lifecycle infrastructure.
 
-The `RegistryCache` CR tracks whether the Registry Cache admission webhook is healthy and the module is fully operational. The controller reconciles this resource and transitions it through a set of well-defined states.
+The `RegistryCache` custom resource (CR) tracks whether the Registry Cache admission webhook is healthy and the module is fully operational. The controller reconciles this resource and transitions it through a set of well-defined states.
 
 ## Sample Custom Resource
 

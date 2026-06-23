@@ -5,7 +5,7 @@
 [![golangci lint](https://badgers.space/github/checks/kyma-project/registry-cache/main/golangci-lint)](https://github.com/kyma-project/registry-cache/actions/workflows/lint.yaml)
 [![latest release](https://badgers.space/github/release/kyma-project/registry-cache)](https://github.com/kyma-project/registry-cache/releases/latest)
 
-# Registry Cache Module
+# Registry Cache
 
 This repository contains the source code for the Registry Cache module.
 

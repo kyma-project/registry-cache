@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Go 1.26 or later (the required version is defined in `go.mod`)
+- Go 1.26.4 or later (the required version is defined in `go.mod`)
 - Docker or a compatible container tool
 - `kubectl` configured to point to a Kubernetes cluster
 - k3d (for end-to-end tests only)
@@ -34,7 +34,7 @@ The compiled manager binary is placed in `bin/manager`.
 
 ## Running the Controller Locally
 
-To run the controller against your current kubeconfig cluster:
+To run the controller against your current kubeconfig cluster, use the following command:
 
 ```bash
 make run

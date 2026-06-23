@@ -2,15 +2,15 @@
 
 ## Prerequisites
 
-- A managed Kyma Runtime instance running on the BTP platform.
-- Administrative access to the Kyma Runtime with kubeconfig and the `kubectl` tool.
-- The Registry Cache module installed on your Kyma Runtime cluster.
+- A SAP BTP, Kyma runtime instance running on the BTP platform.
+- Administrative access to the Kyma runtime with kubeconfig and the `kubectl` tool.
+- The Registry Cache module installed on your Kyma cluster.
 
 ## Basic Configuration
 
 `RegistryCacheConfig` is a namespace-scoped resource and can be created in any namespace.
 
-To configure the Registry Cache, create a `RegistryCacheConfig` custom resource. The following example uses the `test` namespace — create it first if it doesn't exist:
+To configure Registry Cache, create a `RegistryCacheConfig` custom resource (CR). The following example uses the `test` namespace — create it first if it doesn't exist:
 
 ```bash
 kubectl create namespace test
@@ -21,7 +21,7 @@ kubectl create -f - <<EOF
 apiVersion: core.kyma-project.io/v1beta1
 kind: RegistryCacheConfig
 metadata:
-  name: config
+  name: config1
   namespace: test
 spec:
   upstream: docker.io
@@ -30,18 +30,18 @@ spec:
 EOF
 ```
 
-Once applied, the Kyma Control Plane processes the resource and configures a caching layer for the specified upstream registry (in this case `docker.io`).
-The `volume.size` field specifies the size of the persistent volume used to store cached images.
+Once applied, Kyma Control Plane (KCP) processes the resource and configures a caching layer for the specified upstream registry (in this case, `docker.io`).
+The **volume.size** field specifies the size of the persistent volume used to store cached images.
 
 You can create multiple `RegistryCacheConfig` resources to cache different upstream registries. Each resource must have a unique name, and each upstream registry must be unique across all resources in the cluster.
 
-## Provide Credentials for a Private Upstream Registry
+## Providing Credentials for Upstream Repository
 
-If the upstream registry requires authentication, create a Kubernetes Secret in the same namespace as the `RegistryCacheConfig` resource and reference it in the `spec.secretReferenceName` field.
-The secret must be immutable and of type `generic`.
+If the upstream registry requires authentication, create a Kubernetes Secret in the same namespace as the `RegistryCacheConfig` resource and reference it in the **spec.secretReferenceName** field.
+The Secret must be immutable and of type `generic`.
 
-**Note:**
-> The credential secret must exist on the cluster **before** applying the `RegistryCacheConfig` resource.
+> ### Note:
+> The credential Secret must exist on the cluster **before** applying the `RegistryCacheConfig` resource.
 
 1. Set environment variables with the upstream registry credentials:
 
@@ -56,7 +56,7 @@ The secret must be immutable and of type `generic`.
    kubectl create namespace test
    ```
 
-3. Create an immutable secret named `rc-secret` in the `test` namespace:
+3. Create an immutable Secret named `rc-secret` in the `test` namespace:
 
    ```bash
    kubectl create -f - <<EOF
@@ -73,55 +73,55 @@ The secret must be immutable and of type `generic`.
    EOF
    ```
 
-   For Artifact Registry, use `_json_key` as the username and the service account key in JSON format as the password. To base64-encode the service account key, run:
+   For [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/authentication), use `_json_key` as the username and the service account key in JSON format as the password. To base64-encode the service account key, run:
 
    ```bash
    echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 | tr -d '\n'
    ```
 
-4. Apply the Registry Cache configuration referencing the created secret:
+4. Apply the Registry Cache configuration referencing the created Secret:
 
    ```bash
    kubectl create -f - <<EOF
    apiVersion: core.kyma-project.io/v1beta1
    kind: RegistryCacheConfig
    metadata:
-     name: config
+     name: config2
      namespace: test
    spec:
-     upstream: docker.io
+     upstream: <protected registry URL>
      secretReferenceName: rc-secret
      volume:
        size: 100Gi
    EOF
    ```
 
-**Note:**
+> ### Note:
 > When using a private registry, the same credentials must be stored in **two** Kubernetes Secrets:
-> - The secret referenced in `spec.secretReferenceName` — used by the registry cache to authenticate against the upstream registry when pulling images to cache.
-> - An `imagePullSecret` on each workload — used by containerd to authenticate directly against the upstream registry as a fallback when the registry cache is unavailable.
+> - The Secret referenced in **spec.secretReferenceName** — used by Registry Cache to authenticate against the upstream registry when pulling images to cache.
+> - An `imagePullSecret` on each workload — used by containerd to authenticate directly against the upstream registry as a fallback when Registry Cache is unavailable.
 >
-> Do not remove the `imagePullSecret` from your workloads when configuring credentials for the registry cache. If the cache is unavailable, containerd falls back to the upstream registry and requires the credentials directly.
+> Do not remove the `imagePullSecret` from your workloads when configuring credentials for Registry Cache. If the cache is unavailable, containerd falls back to the upstream registry and requires the credentials directly.
 
 ## Advanced Configuration
 
 The following table describes all fields in the `RegistryCacheConfig` resource:
 
-| Field | Description | Default value | Required |
+| Field | Required | Description | Default value |
 |---|---|---|---|
-| `spec.upstream` | The host (and optional port) of the upstream container image registry to cache images from. No scheme — e.g. `docker.io` or `my-registry.example.com:5000`. | N/A | Yes |
-| `spec.remoteURL` | The remote registry URL. If defined, it is set as `proxy.remoteurl` in the registry [configuration](https://github.com/distribution/distribution/blob/main/docs/content/recipes/mirror.md#configure-the-cache) and as the `server` field in the containerd [hosts.toml](https://github.com/containerd/containerd/blob/main/docs/hosts.md#server-field) file. Defaults to `https://<upstream>`. | N/A | No |
-| `spec.secretReferenceName` | The name of the Kubernetes Secret containing credentials for the upstream registry. | N/A | No |
-| `spec.volume.size` | The size of the persistent volume for storing cached images. | 10Gi | No |
-| `spec.volume.storageClassName` | The storage class for the persistent volume. If not specified, the cluster's default storage class is used. | N/A | No |
-| `spec.garbageCollection.ttl` | The time-to-live (TTL) for cached images. Images not accessed within this duration are eligible for garbage collection. Set to `0s` to disable garbage collection. | 168h (7 days) | No |
-| `spec.proxy.httpProxy` | Proxy server for HTTP connections used by the registry cache. | N/A | No |
-| `spec.proxy.httpsProxy` | Proxy server for HTTPS connections used by the registry cache. | N/A | No |
-| `spec.http.tls` | Indicates whether TLS is enabled for the HTTP server of the registry cache. | true | No |
+| **spec.upstream** | Yes | The host (and optional port) of the upstream container image registry to cache images from. No scheme — e.g. `docker.io` or `my-registry.example.com:5000`. | None |
+| **spec.remoteURL** | No | The remote registry URL. If defined, it is set as `proxy.remoteurl` in the registry [configuration](https://github.com/distribution/distribution/blob/main/docs/content/recipes/mirror.md#configure-the-cache) and as the `server` field in the containerd [hosts.toml](https://github.com/containerd/containerd/blob/main/docs/hosts.md#server-field) file. Defaults to `https://<upstream>`. | None |
+| **spec.secretReferenceName** | No | The name of the Kubernetes Secret containing credentials for the upstream registry. | None |
+| **spec.volume.size** | No | The size of the persistent volume for storing cached images. | 10Gi |
+| **spec.volume.storageClassName** | No | The storage class for the persistent volume. If not specified, the cluster's default storage class is used. | None |
+| **spec.garbageCollection.ttl** | No | The time-to-live (TTL) for cached images. Images not accessed within this duration are eligible for garbage collection. Set to `0s` to disable garbage collection. | 168h (7 days) |
+| **spec.proxy.httpProxy** | No | Proxy server for HTTP connections used by the Registry Cache. | None |
+| **spec.proxy.httpsProxy** | No | Proxy server for HTTPS connections used by the Registry Cache. | None |
+| **spec.http.tls** | No | Indicates whether TLS is enabled for the HTTP server of the Registry Cache. | true |
 
-## Validate Registry Cache Configuration
+## Validation of Registry Cache Configuration
 
-After applying the `RegistryCacheConfig` resource, the registry cache webhook validates the configuration before it takes effect.
+After applying the `RegistryCacheConfig` resource, the Registry Cache webhook validates the configuration before it takes effect.
 If the configuration is valid, the resource status transitions from `Pending` to `Ready` and the caching layer is configured.
 If there are issues, the status transitions from `Pending` to `Error` and an error message is provided in the status conditions.
 
@@ -134,19 +134,19 @@ The following table describes the validation rules for each field:
 
 | Field | Validation | Example |
 |---|---|---|
-| `spec.upstream` | Must be a valid DNS-resolvable host (no scheme). Must be unique across all `RegistryCacheConfig` resources in the cluster. Port, if specified, must be in the range 1–65535. | N/A |
-| `spec.remoteURL` | Must have the format `<scheme><host>[:<port>]` where `<scheme>` is `https://` or `http://` and `<host>[:<port>]` corresponds to the upstream. Must be DNS resolvable. | N/A |
-| `spec.secretReferenceName` | The referenced secret must exist in the same namespace as the `RegistryCacheConfig` resource, be immutable, and contain exactly the `username` and `password` data keys. | N/A |
-| `spec.volume.size` | Must be a positive value in a format recognized by Go's `resource.Quantity` (e.g. `10Gi`). Immutable after creation. | 10Gi |
-| `spec.volume.storageClassName` | The referenced storage class must be available. Immutable after creation. | N/A |
-| `spec.garbageCollection.ttl` | Must be in a format recognized by Go's `time.ParseDuration` (e.g. `24h`). Set to `0s` to disable garbage collection. Cannot be re-enabled once disabled. | 168h |
-| `spec.proxy.httpProxy` | Must be a valid URL starting with `http://` or `https://`. | N/A |
-| `spec.proxy.httpsProxy` | Must be a valid URL starting with `http://` or `https://`. | N/A |
-| `spec.http.tls` | Must be a valid boolean indicating whether TLS is enabled. | N/A |
+| **spec.upstream** | Must be a valid DNS-resolvable host (no scheme). Must be unique across all `RegistryCacheConfig` resources in the cluster. Port, if specified, must be in the range 1–65535. | None |
+| **spec.remoteURL** | Must have the format `<scheme><host>[:<port>]` where `<scheme>` is `https://` or `http://` and `<host>[:<port>]` corresponds to the upstream. Must be DNS resolvable. | None |
+| **spec.secretReferenceName** | The referenced secret must exist in the same namespace as the `RegistryCacheConfig` resource, be immutable, and contain exactly the `username` and `password` data keys. | None |
+| **spec.volume.size** | Must be a positive value in a format recognized by Go's `resource.Quantity` (e.g. `10Gi`). Immutable after creation. | 10Gi |
+| **spec.volume.storageClassName** | The referenced storage class must be available. Immutable after creation. | None |
+| **spec.garbageCollection.ttl** | Must be in a format recognized by Go's `time.ParseDuration` (e.g. `24h`). Set to `0s` to disable garbage collection. Cannot be re-enabled once disabled. | 168h |
+| **spec.proxy.httpProxy** | Must be a valid URL starting with `http://` or `https://`. | None |
+| **spec.proxy.httpsProxy** | Must be a valid URL starting with `http://` or `https://`. | None |
+| **spec.http.tls** | Must be a valid boolean indicating whether TLS is enabled. | None |
 
-## Manage Registry Cache Configurations
+## Managing Registry Cache Configuration
 
-### List Registry Cache Configurations
+### Listing Registry Cache Configurations
 
 To list all `RegistryCacheConfig` resources across all namespaces, run:
 
@@ -160,7 +160,7 @@ To list resources in a specific namespace, run:
 kubectl get registrycacheconfig -n <namespace>
 ```
 
-### Delete a Registry Cache Configuration
+### Deleting a Registry Cache Configuration
 
 To delete a `RegistryCacheConfig` resource, run:
 

@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-<!-- TODO: SME input required — confirm any BTP-specific prerequisites or approval steps required before updating -->
+<!-- TODO: SME input required — confirm any prerequisites or approval steps required before updating -->
 
-- Access to the BTP management cluster with sufficient RBAC permissions.
+- Access to the Kyma runtime cluster with sufficient RBAC permissions.
 - `kubectl` configured to point to the target cluster.
 - The new release artifacts from the [releases page](https://github.com/kyma-project/registry-cache/releases).
 

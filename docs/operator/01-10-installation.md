@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-<!-- TODO: SME input required — confirm required RBAC roles and BTP-specific access prerequisites -->
+<!-- TODO: SME input required — confirm required RBAC roles and access prerequisites -->
 
-- Access to the BTP management cluster with sufficient RBAC permissions to apply CRDs and create cluster-scoped resources.
+- Access to the Kyma runtime cluster with sufficient RBAC permissions to apply CRDs and create cluster-scoped resources.
 - `kubectl` configured to point to the target cluster.
 - The Registry Cache module release artifacts from the [releases page](https://github.com/kyma-project/registry-cache/releases).
 

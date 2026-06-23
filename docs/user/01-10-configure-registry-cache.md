@@ -73,10 +73,29 @@ The Secret must be immutable and of type `generic`.
    EOF
    ```
 
-   For [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/authentication), use `_json_key` as the username and the service account key in JSON format as the password. To base64-encode the service account key, run:
+   For [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/authentication), the username is `_json_key` and the password is the service account key in JSON format. Follow steps 3a–3b instead of step 3 above.
+
+   3a. Base64-encode the service account key:
 
    ```bash
-   echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 | tr -d '\n'
+   export PASSWORD=$(echo -nE $SERVICE_ACCOUNT_KEY_JSON | base64 | tr -d '\n')
+   ```
+
+   3b. Create an immutable Secret with the encoded key as the password:
+
+   ```bash
+   kubectl create -f - <<EOF
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: rc-secret
+     namespace: test
+   type: Opaque
+   immutable: true
+   data:
+     username: $(echo -n "_json_key" | base64 | tr -d '\n')
+     password: $PASSWORD
+   EOF
    ```
 
 4. Apply the Registry Cache configuration referencing the created Secret:
@@ -102,6 +121,56 @@ The Secret must be immutable and of type `generic`.
 > - An `imagePullSecret` on each workload — used by containerd to authenticate directly against the upstream registry as a fallback when Registry Cache is unavailable.
 >
 > Do not remove the `imagePullSecret` from your workloads when configuring credentials for Registry Cache. If the cache is unavailable, containerd falls back to the upstream registry and requires the credentials directly.
+
+## Rotating Credentials
+
+Credential Secrets are immutable and cannot be updated in place. To rotate credentials:
+
+1. Create a new Secret with the updated credentials. Use a different name (for example, `rc-secret-v2`):
+
+   ```bash
+   kubectl create -f - <<EOF
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: rc-secret-v2
+     namespace: <namespace>
+   type: Opaque
+   immutable: true
+   data:
+     username: $(echo -n $USERNAME | base64 | tr -d '\n')
+     password: $(echo -n $PASSWORD | base64 | tr -d '\n')
+   EOF
+   ```
+
+2. Delete the existing `RegistryCacheConfig` resource:
+
+   ```bash
+   kubectl delete registrycacheconfig <name> -n <namespace>
+   ```
+
+3. Recreate the `RegistryCacheConfig` resource referencing the new Secret:
+
+   ```bash
+   kubectl create -f - <<EOF
+   apiVersion: core.kyma-project.io/v1beta1
+   kind: RegistryCacheConfig
+   metadata:
+     name: <name>
+     namespace: <namespace>
+   spec:
+     upstream: <upstream>
+     secretReferenceName: rc-secret-v2
+     volume:
+       size: <size>
+   EOF
+   ```
+
+4. Once the new `RegistryCacheConfig` is in `Ready` state, delete the old Secret:
+
+   ```bash
+   kubectl delete secret rc-secret -n <namespace>
+   ```
 
 ## Advanced Configuration
 

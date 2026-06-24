@@ -1,12 +1,12 @@
 # Architecture
 
-For the architecture diagram, component overview, and state machine, see [Architecture](../user/README.md#architecture) in the user documentation.
+For the architecture diagram and component overview, see [Architecture](../user/README.md#architecture) in the user documentation.
 
 ## Components and Code Paths
 
 | Component | Package | Responsibility |
 |---|---|---|
-| `RegistryCacheReconciler` | `internal/controller` | Reconciles `RegistryCache` CRs; manages the installation state machine |
+| `RegistryCacheReconciler` | `internal/controller` | Reconciles `RegistryCache` CRs; drives status transitions (Processing → Ready / Error / Deleting) with 5s requeue on transitions and 30s on health checks |
 | Webhook Server | `internal/webhook/server` | TLS server (port 9443) for admission webhooks; exposes `StartedChecker` for health probing |
 | `RegistryCacheConfig` Webhook | `internal/webhook/v1beta1` | Validates `RegistryCacheConfig` resources on create and update |
 | Validation Framework | `internal/webhook/validations` | Pluggable validation chain: DNS resolution, upstream uniqueness, secret existence and format |

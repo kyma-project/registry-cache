@@ -5,28 +5,28 @@
 [![golangci lint](https://badgers.space/github/checks/kyma-project/registry-cache/main/golangci-lint)](https://github.com/kyma-project/registry-cache/actions/workflows/lint.yaml)
 [![latest release](https://badgers.space/github/release/kyma-project/registry-cache)](https://github.com/kyma-project/registry-cache/releases/latest)
 
-# Registry Cache Kyma Module
+# Registry Cache Module
 
-This repository contains the source code for the Registry Cache Kyma Module.
+This repository contains the source code for the Registry Cache module.
 
 ## Overview
 
-The Registry Cache Kyma module adds a possibility to enable and configure a caching layer for container image registries used in your BTP managed Kyma Runtimes.  
+With the Registry Cache module, you can enable and configure a caching layer for container image registries used in your SAP BTP, Kyma runtime instances.  
 This feature reduces the amount of outbound traffic from your runtimes to public registries, improving performance and reliability of image pulls.  
 Additionally, it allows to configure access to private registries by providing credentials that will be used by the caching layer to authenticate against those registries.
 
-For information how to use registry cache configuration, see the [user documentation](./docs/user/README.md).
+For information on using the registry cache configuration, see the [user documentation](./docs/user/README.md).
 
-**Note:**
-> As this feature is implemented as part of Kyma Control Plane it is available only for BTP managed Kyma Runtimes.  
-> Installing this module in self-managed Kyma Runtime cluster and providing registry cache configuration will have no effect.
+> ### Note:
+> As this feature is implemented as part of Kyma Control Plane, it is available only for SAP BTP, Kyma runtime.  
+> Installing this module in a self-managed Kyma cluster and providing registry cache configuration will have no effect.
 
 ## Prerequisites
 
 - A managed Kyma Runtime instance running on BTP platform.
-- Access to Kyma console (Busola) or kubectl with kubeconfig for the Kyma Runtime cluster.
+- Access to Kyma dashboard (Busola) or kubectl with kubeconfig for the Kyma runtime cluster.
 
-## Installation with Busola
+## Installation
 To enable the Registry Cache module in your Kyma cluster with Busola find the list of "Modules" section in the main navigation panel.    
 Then, click on "Modify Module" button and select "Registry Cache" from the list:
 
@@ -44,7 +44,7 @@ Then, click on "Modify Module" button and select "Registry Cache" from the list:
 
 ### Installation in the k3d Cluster Using Make Targets
 
-1. Clone the project.
+1. Clone the project:
 
     ```bash
     git clone https://github.com/kyma-project/registry-cache.git && cd registry-cache/
@@ -94,10 +94,9 @@ kubectl patch deployment registry-cache-controller-manager -n kyma-system \
 
 ## Contributing
 
-For information on implementation details of registry cache module, see the [contributor documentation](./docs/contributor/Readme.md).
 <!--- mandatory section - do not change this! --->
 
-For information how to contribute see the [Contributing Rules](CONTRIBUTING.md).
+See the [Contributing Rules](CONTRIBUTING.md).
 
 ## Code of Conduct
 <!--- mandatory section - do not change this! --->

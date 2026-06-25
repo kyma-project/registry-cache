@@ -75,12 +75,7 @@ The Registry Cache module defines two custom resources:
 
 ## Authorization
 
-The Registry Cache module defines the following ClusterRoles:
-
-| ClusterRole      | Description                                                                                                                                                                                                               |
-|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `manager-role`   | Used by the controller. Grants read/write access to `RegistryCache` and `RegistryCacheConfig` resources, patch access to `ValidatingWebhookConfiguration`, read access to `Secrets`, and create/patch access to events. |
-| `metrics-reader` | Grants GET access to the `/metrics` endpoint.                                                                                                                                                                             |
+<!-- TODO: Update when https://github.com/kyma-project/registry-cache/issues/77 is implemented -->
 
 ## Resource Consumption
 

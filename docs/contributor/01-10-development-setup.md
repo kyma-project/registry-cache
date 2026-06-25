@@ -22,7 +22,7 @@ The compiled manager binary is placed in `bin/manager`.
 | Target | Description |
 |---|---|
 | `make build` | Compile the manager binary |
-| `make run` | Run the controller locally against the cluster configured in `~/.kube/config` |
+| `make run` | Run the controller locally against the cluster configured in `~/.kube/config` (requires a valid TLS certificate at `/tmp/tls.crt` — see [Installation in the k3d Cluster Using Make Targets](../../README.md#installation-in-the-k3d-cluster-using-make-targets) for the recommended local dev workflow) |
 | `make manifests` | Regenerate CRD manifests and `WebhookConfiguration` from kubebuilder markers |
 | `make generate` | Regenerate `DeepCopy` methods from Go type definitions |
 | `make fmt` | Format Go source files with `gofmt` |
@@ -31,16 +31,6 @@ The compiled manager binary is placed in `bin/manager`.
 | `make lint-fix` | Run `golangci-lint` and apply auto-fixable suggestions |
 | `make test` | Run unit and controller tests (no cluster required) |
 | `make test-e2e` | Run end-to-end tests (requires a running k3d cluster) |
-
-## Running the Controller Locally
-
-To run the controller against your current kubeconfig cluster, use the following command:
-
-```bash
-make run
-```
-
-This starts the manager in-process. The webhook server requires valid TLS certificates — for local development, you may need to generate self-signed certificates and configure the `ValidatingWebhookConfiguration` CA bundle accordingly.
 
 ## Code Generation
 

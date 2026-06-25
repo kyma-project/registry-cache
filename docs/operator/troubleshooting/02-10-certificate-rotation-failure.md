@@ -13,7 +13,7 @@ The `ValidatingWebhookConfiguration` CA bundle was not updated after the TLS cer
 1. Check the controller logs for certificate callback errors:
 
    ```bash
-   kubectl logs -n kyma-system -l app=registry-cache --tail=100 | grep -i "cert\|certificate\|webhook"
+   kubectl logs -n kyma-system -l control-plane=controller-manager --tail=100 | grep -i "cert\|certificate\|webhook"
    ```
 
 2. If the CA bundle is stale, manually patch the `ValidatingWebhookConfiguration` with the current CA bundle:

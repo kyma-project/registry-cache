@@ -9,7 +9,7 @@ For the architecture diagram and component overview, see [Architecture](../user/
 | `RegistryCacheReconciler` | `internal/controller` | Reconciles `RegistryCache` CRs; drives status transitions (Processing → Ready / Error / Deleting) with 5s requeue on transitions and 30s on health checks |
 | Webhook Server | `internal/webhook/server` | TLS server (port 9443) for admission webhooks; exposes `StartedChecker` for health probing |
 | `RegistryCacheConfig` Webhook | `internal/webhook/v1beta1` | Validates `RegistryCacheConfig` resources on create and update |
-| Validation Framework | `internal/webhook/validations` | Pluggable validation chain: DNS resolution, upstream uniqueness, secret existence and format |
+| Validation Framework | `internal/webhook/validations` | Internal validation chain: DNS resolution, upstream uniqueness, Secret existence and format |
 | Certificate Manager | `internal/webhook/certificate` | Watches TLS cert files; rotates the CA bundle in `ValidatingWebhookConfiguration` on cert renewal |
 | HTTP Server | `internal/httpserver` | Underlying HTTP server used by the webhook multiplexer |
 

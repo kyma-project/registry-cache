@@ -65,12 +65,6 @@ This table lists all the possible parameters of a `RegistryCacheConfig` resource
 
 ## Related Resources and Components
 
-These are the resources related to this CR:
-
-| Custom resource | Description |
-|---|---|
-| `RegistryCache` | Module CR that tracks the overall installation health of the Registry Cache module. See [RegistryCache](RegistryCache.md). |
-
 These components use this CR:
 
 | Component | Description |

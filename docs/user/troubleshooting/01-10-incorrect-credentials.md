@@ -4,22 +4,27 @@
 
 Image pulls from a cached upstream registry fail consistently with `404 manifest unknown` errors, even though the image exists in the upstream registry and the image name is correct.
 
+> ### Note:
+> Registry Cache is designed to not impair operations if its configuration is incorrect. If you have configured an `imagePullSecret` on your workloads (recommended), image pulls will still succeed via direct fallback to the upstream registry even when Registry Cache credentials are wrong. This means image pull failures may not be visible even with misconfigured credentials — the only way to verify the cache is working correctly is to check the Gardener extension Pod logs as described below.
+
 ## Cause
 
 The upstream registry returns `404` instead of `401` when credentials are incorrect. This makes a credential failure indistinguishable from a missing image at the log level.
 
 ## Solution
 
-1. Check the Registry Cache Pod logs for the affected upstream:
+The registry cache Pods are created in `kube-system` by the Gardener extension. They are named after the upstream registry host they cache.
+
+1. List the registry cache Pods for the affected upstream:
 
    ```bash
-   kubectl logs -n kube-system -l app=registry-cache --tail=50
+   kubectl get pods -n kube-system | grep registry-<upstream-host>
    ```
 
-2. To filter logs for a specific upstream, use the Pod name pattern (Pods are named after the upstream host):
+2. Check the logs of the relevant Pod:
 
    ```bash
-   kubectl logs -n kube-system $(kubectl get pods -n kube-system -o name | grep registry-<upstream-host>) --tail=50
+   kubectl logs -n kube-system <pod-name> --tail=50
    ```
 
 3. A pull failure due to incorrect credentials looks similar to this one:

@@ -9,7 +9,13 @@
 
 ## Unit and Controller Tests
 
-Unit tests use `controller-runtime/envtest` to spin up a local Kubernetes API server in-process. No external cluster is required.
+Unit tests use `controller-runtime/envtest` to spin up a local Kubernetes API server via real kube-apiserver/etcd child processes. No external cluster is required, but the envtest binaries must be present locally. Before running tests for the first time, run:
+
+```bash
+make setup-envtest
+```
+
+Then run the tests:
 
 ```bash
 make test
@@ -19,10 +25,15 @@ Test coverage is automatically uploaded to [Coveralls](https://coveralls.io/gith
 
 ## End-to-End Tests
 
-End-to-end tests require a running k3d cluster. The suite deploys the controller into the cluster and exercises real Kubernetes resources.
+End-to-end tests require a running k3d cluster named `k3s-default` (the name the Makefile looks for). Create it first if it doesn't exist:
 
 ```bash
-# Start a k3d cluster first, then:
+k3d cluster create k3s-default
+```
+
+Then run the tests:
+
+```bash
 make test-e2e
 ```
 

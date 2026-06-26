@@ -1,3 +1,4 @@
+// TODO: Add the docs/user/README.md entry to the overarching sidebar in the kyma repo.
 export default [
   { text: 'Configure Registry Cache', link: './01-10-configure-registry-cache.md' },
   {

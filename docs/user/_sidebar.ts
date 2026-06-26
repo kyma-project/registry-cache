@@ -1,24 +1,23 @@
-const items = [
+export default [
+  { text: 'Configure Registry Cache', link: './01-10-configure-registry-cache.md' },
   {
-    name: 'Registry Cache',
+    text: 'Resources',
+    link: './resources/README.md',
+    collapsed: true,
     items: [
-      { name: 'Overview', url: '/docs/user/README.md' },
-      { name: 'Configure Registry Cache', url: '/docs/user/01-10-configure-registry-cache.md' },
+      { text: 'RegistryCache', link: './resources/RegistryCache.md' },
+      { text: 'RegistryCacheConfig', link: './resources/RegistryCacheConfig.md' },
+    ],
+  },
+  {
+    text: 'Troubleshooting',
+    link: './troubleshooting/README.md',
+    collapsed: true,
+    items: [
       {
-        name: 'Resources',
-        items: [
-          { name: 'RegistryCache', url: '/docs/user/resources/RegistryCache.md' },
-          { name: 'RegistryCacheConfig', url: '/docs/user/resources/RegistryCacheConfig.md' },
-        ],
-      },
-      {
-        name: 'Troubleshooting',
-        items: [
-          { name: 'Image Pulls Fail with 404 manifest unknown', url: '/docs/user/troubleshooting/01-10-incorrect-credentials.md' },
-        ],
+        text: 'Image Pulls Fail with "404 manifest unknown" Despite Correct Image Name',
+        link: './troubleshooting/01-10-incorrect-credentials.md',
       },
     ],
   },
 ];
-
-export default items;

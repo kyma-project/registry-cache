@@ -5,7 +5,6 @@
 - Go 1.26.4 or later (the required version is defined in `go.mod`)
 - Docker or a compatible container tool
 - `kubectl` configured to point to a Kubernetes cluster
-- k3d (for end-to-end tests only)
 
 ## Clone and Build
 
@@ -30,7 +29,6 @@ The compiled manager binary is placed in `bin/manager`.
 | `make lint` | Run `golangci-lint` |
 | `make lint-fix` | Run `golangci-lint` and apply auto-fixable suggestions |
 | `make test` | Run unit and controller tests (no cluster required) |
-| `make test-e2e` | Run end-to-end tests (requires a running k3d cluster) |
 
 ## Code Generation
 

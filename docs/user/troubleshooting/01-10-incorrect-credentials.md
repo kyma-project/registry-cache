@@ -5,7 +5,7 @@
 Image pulls from a cached upstream registry fail consistently with `404 manifest unknown` errors, even though the image exists in the upstream registry and the image name is correct.
 
 > ### Note:
-> Registry Cache is designed to not impair operations if its configuration is incorrect. If you have configured an `imagePullSecret` on your workloads (recommended), image pulls will still succeed via direct fallback to the upstream registry even when Registry Cache credentials are wrong. This means image pull failures may not be visible even with misconfigured credentials — the only way to verify the cache is working correctly is to check the Gardener extension Pod logs as described below.
+> Registry Cache is designed to not impair operations if its configuration is incorrect. If you have configured an `imagePullSecret` on your workloads (recommended), image pulls will still succeed via direct fallback to the upstream registry even when Registry Cache credentials are wrong. This means image pull failures may not be visible even with misconfigured credentials — the only way to verify the cache is working correctly is to check the registry cache Pod logs as described below.
 
 ## Cause
 

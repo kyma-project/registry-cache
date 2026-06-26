@@ -60,13 +60,12 @@ The controller transitions the `RegistryCache` CR through the following states:
 | _(empty)_ | Initial state — the resource has just been created and has not yet been processed. |
 | `Processing` | The controller is checking whether the admission webhook is ready. |
 | `Ready` | The admission webhook is healthy and the module is fully operational. |
-| `Warning` | The module is operational but the controller detected a non-critical issue. The controller re-checks at the health interval (every 30 seconds). |
 | `Error` | The admission webhook is unhealthy. The controller re-checks at the health interval (every 30 seconds). |
 | `Deleting` | A deletion timestamp was set on the resource; the controller is removing the finalizer. |
 
 The normal lifecycle is: _(empty)_ → `Processing` → `Ready`.
 
-If the webhook becomes unhealthy while in `Ready` or `Warning`, the state transitions to `Error`. The controller retries every 30 seconds and returns to `Ready` once the webhook is healthy again.
+If the webhook becomes unhealthy while in `Ready`, the state transitions to `Error`. The controller retries every 30 seconds and returns to `Ready` once the webhook is healthy again.
 
 ## Related Resources and Components
 
@@ -80,5 +79,5 @@ These components use this CR:
 
 | Component | Description |
 |---|---|
-| Registry Cache controller | Reconciles `RegistryCache` CRs and manages the state machine described above. |
-| Module lifecycle manager | Creates and deletes the `RegistryCache` CR as part of module installation and removal. |
+| Registry Cache controller | Reconciles `RegistryCache` CRs and drives status transitions. |
+| Kyma Lifecycle Manager (KLM) | KCP component that creates and deletes the `RegistryCache` CR as part of module installation and removal. |

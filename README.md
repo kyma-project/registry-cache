@@ -12,7 +12,7 @@ This repository contains the source code for the Registry Cache module.
 ## Overview
 
 With the Registry Cache module, you can enable and configure a caching layer for container image registries used in your SAP BTP, Kyma runtime instances.
-It reduces outbound traffic to public registries, improving performance and reliability of image pulls.
+It reduces outbound traffic to public registries, improving performance of image pulls.
 It also supports access to private registries by allowing you to provide credentials for the caching layer to use when authenticating against those registries.
 
 For information on using the registry cache configuration, see the [user documentation](./docs/user/README.md).

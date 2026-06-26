@@ -57,8 +57,8 @@ The controller drives the `RegistryCache` CR through the following states:
 | _(empty)_           | Resource just created  | `Processing`         |
 | `Processing`        | Webhook healthy        | `Ready`              |
 | `Processing`        | Webhook not healthy    | `Processing` (retry) |
-| `Ready` / `Warning` | Webhook healthy        | `Ready` (no change)  |
-| `Ready` / `Warning` | Webhook not healthy    | `Error`              |
+| `Ready`             | Webhook healthy        | `Ready` (no change)  |
+| `Ready`             | Webhook not healthy    | `Error`              |
 | `Error`             | Webhook healthy        | `Ready`              |
 | `Error`             | Webhook not healthy    | `Error` (retry)      |
 | Any                 | Deletion timestamp set | `Deleting`           |

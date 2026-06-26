@@ -5,7 +5,6 @@
 | Type | Framework | Location | Run with |
 |---|---|---|---|
 | Unit and controller tests | Ginkgo v2 + Gomega, `controller-runtime/envtest` | `internal/**/`, `api/` | `make test` |
-| End-to-end tests | Ginkgo v2 + Gomega | `test/e2e/` | `make test-e2e` |
 
 ## Unit and Controller Tests
 
@@ -22,22 +21,6 @@ make test
 ```
 
 Test coverage is automatically uploaded to [Coveralls](https://coveralls.io/github/kyma-project/registry-cache) when the CI pipeline runs on the `main` branch.
-
-## End-to-End Tests
-
-End-to-end tests require a running k3d cluster named `k3s-default` (the name the Makefile looks for). Create it first if it doesn't exist:
-
-```bash
-k3d cluster create k3s-default
-```
-
-Then run the tests:
-
-```bash
-make test-e2e
-```
-
-End-to-end tests are not run automatically in CI. They must be triggered manually or as part of a release pipeline.
 
 ## Linting
 

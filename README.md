@@ -27,8 +27,7 @@ For information on using the registry cache configuration, see the [user documen
 - Access to Kyma dashboard (Busola) or kubectl with kubeconfig for the Kyma runtime cluster.
 
 ## Installation
-To enable the Registry Cache module in your Kyma cluster with Busola find the list of "Modules" section in the main navigation panel.    
-Then, click on "Modify Module" button and select "Registry Cache" from the list:
+For information on how to add a module to your Kyma cluster, see [Adding and Deleting a Kyma Module](https://help.sap.com/docs/btp/sap-business-technology-platform/enable-and-disable-kyma-module).
 
 ## Development
 

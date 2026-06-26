@@ -1,13 +1,3 @@
-> **NOTE:** This is a general template that you can use for a project README.md. Except for the mandatory sections, use only those sections that suit your use case but keep the proposed section order.
->
-> Mandatory sections: 
-> - `Overview`
-> - `Prerequisites`, if there are any requirements regarding hard- or software
-> - `Installation`
-> - `Contributing` - do not change this!
-> - `Code of Conduct` - do not change this!
-> - `Licensing` - do not change this!
->
 [![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/registry-cache)](https://api.reuse.software/info/github.com/kyma-project/registry-cache)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kyma-project/registry-cache)](https://goreportcard.com/report/github.com/kyma-project/registry-cache)
 [![unit tests](https://badgers.space/github/checks/kyma-project/registry-cache/main/unit-tests)](https://github.com/kyma-project/registry-cache/actions/workflows/unit-tests.yaml)
@@ -15,38 +5,94 @@
 [![golangci lint](https://badgers.space/github/checks/kyma-project/registry-cache/main/golangci-lint)](https://github.com/kyma-project/registry-cache/actions/workflows/lint.yaml)
 [![latest release](https://badgers.space/github/release/kyma-project/registry-cache)](https://github.com/kyma-project/registry-cache/releases/latest)
 
-# {Project Title}
-<!--- mandatory --->
-> Modify the title and insert the name of your project. Use Heading 1 (H1).
+# Registry Cache Module
+
+This repository contains the source code for the Registry Cache module.
 
 ## Overview
-<!--- mandatory section --->
 
-> Provide a description of the project's functionality.
->
-> If it is an example README.md, describe what the example illustrates.
+With the Registry Cache module, you can enable and configure a caching layer for container image registries used in your SAP BTP, Kyma runtime instances.  
+This feature reduces the amount of outbound traffic from your runtimes to public registries, improving performance and reliability of image pulls.  
+Additionally, it allows to configure access to private registries by providing credentials that will be used by the caching layer to authenticate against those registries.
+
+For information on using the registry cache configuration, see the [user documentation](./docs/user/README.md).
+
+> ### Note:
+> As this feature is implemented as part of Kyma Control Plane, it is available only for SAP BTP, Kyma runtime.  
+> Installing this module in a self-managed Kyma cluster and providing registry cache configuration will have no effect.
 
 ## Prerequisites
 
-> List the requirements to run the project or example.
+- A managed Kyma Runtime instance running on BTP platform.
+- Access to Kyma dashboard (Busola) or kubectl with kubeconfig for the Kyma runtime cluster.
 
 ## Installation
-
-> Explain the steps to install your project. If there are multiple installation options, mention the recommended one and include others in a separate document. Create an ordered list for each installation task.
->
-> If it is an example README.md, describe how to build, run locally, and deploy the example. Format the example as code blocks and specify the language, highlighting where possible. Explain how you can validate that the example ran successfully. For example, define the expected output or commands to run which check a successful deployment.
->
-> Add subsections (H3) for better readability.
-
-## Usage
-
-> Explain how to use the project. You can create multiple subsections (H3). Include the instructions or provide links to the related documentation.
+For information on how to add a module to your Kyma cluster, see [Adding and Deleting a Kyma Module](https://help.sap.com/docs/btp/sap-business-technology-platform/enable-and-disable-kyma-module).
 
 ## Development
 
-> Add instructions on how to develop the project or example. It must be clear what to do and, for example, how to trigger the tests so that other contributors know how to make their pull requests acceptable. Include the instructions or provide links to related documentation.
+### Prerequisites
+
+- Access to a Kubernetes cluster
+- [Go](https://go.dev/)
+- [k3d](https://k3d.io/)
+- [Docker](https://www.docker.com/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Kubebuilder](https://book.kubebuilder.io/)
+- [yq](https://mikefarah.gitbook.io/yq)
+
+### Installation in the k3d Cluster Using Make Targets
+
+1. Clone the project:
+
+    ```bash
+    git clone https://github.com/kyma-project/registry-cache.git && cd registry-cache/
+    ```
+
+2. Create a new k3d cluster:
+
+    ```bash
+    k3d cluster create test-cluster
+    ```
+
+3. Build the controller image and load it into the k3d cluster:
+
+    ```bash
+    make docker-build
+    k3d image import registry-cache-test:latest -c test-cluster
+    ```
+
+4. Apply the k3d installation manifest:
+
+    ```bash
+    make build-k3d-installer
+    kubectl create ns kyma-system
+    kubectl apply -f dist/k3d-install.yaml
+    ```
+
+5. Patch deployment:
+```
+kubectl patch deployment registry-cache-controller-manager -n kyma-system \
+    --type='json' \
+    -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"Never"}]'
+```
+
+### Using Registry Cache Operator
+
+- Create a Registry Cache instance.
+
+    ```bash
+    kubectl apply -f config/samples/default_registry_cache_cr.yaml
+    ```
+
+- Delete a Registry Cache instance.
+
+    ```bash
+    kubectl delete -f config/samples/default_registry_cache_cr.yaml
+    ```
 
 ## Contributing
+
 <!--- mandatory section - do not change this! --->
 
 See the [Contributing Rules](CONTRIBUTING.md).

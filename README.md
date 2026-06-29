@@ -11,19 +11,19 @@ This repository contains the source code for the Registry Cache module.
 
 ## Overview
 
-With the Registry Cache module, you can enable and configure a caching layer for container image registries used in your SAP BTP, Kyma runtime instances.
-It reduces outbound traffic to public registries, improving performance of image pulls.
-It also supports access to private registries by allowing you to provide credentials for the caching layer to use when authenticating against those registries.
+With the Registry Cache module, you can enable and configure a caching layer for container image registries used in your SAP BTP, Kyma runtime instances.  
+This feature reduces the amount of outbound traffic from your runtimes to public registries, improving performance and reliability of image pulls.  
+Additionally, it allows configuring access to private registries by providing credentials that the caching layer uses to authenticate against them.
 
-For information on using the registry cache configuration, see the [user documentation](./docs/user/README.md).
+For information on using the Registry Cache configuration, see the [user documentation](./docs/user/README.md).
 
 > ### Note:
-> As this feature is implemented as part of Kyma Control Plane, it is available only for SAP BTP, Kyma runtime.
-> Installing this module in a self-managed Kyma cluster and providing registry cache configuration will have no effect.
+> Since this feature is implemented as part of Kyma Control Plane, it is available only for SAP BTP, Kyma runtime.  
+> Installing this module in a self-managed Kyma cluster and providing Registry Cache configuration will have no effect.
 
 ## Prerequisites
 
-- A managed Kyma runtime instance running on the BTP platform.
+- A managed Kyma runtime instance running on the SAP BTP platform.
 - Access to Kyma dashboard (Busola) or kubectl with kubeconfig for the Kyma runtime cluster.
 
 ## Installation
@@ -74,8 +74,7 @@ For developer setup, architecture overview, and testing strategy, see the [contr
     ```
 
 5. Patch deployment:
-
-    ```bash
+    ```
     kubectl patch deployment registry-cache-controller-manager -n kyma-system \
         --type='json' \
         -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"Never"}]'
@@ -83,19 +82,20 @@ For developer setup, architecture overview, and testing strategy, see the [contr
 
 ### Using Registry Cache Operator
 
-- Create a Registry Cache instance:
+- Create a Registry Cache instance.
 
     ```bash
     kubectl apply -f config/samples/default_registry_cache_cr.yaml
     ```
 
-- Delete a Registry Cache instance:
+- Delete a Registry Cache instance.
 
     ```bash
     kubectl delete -f config/samples/default_registry_cache_cr.yaml
     ```
 
 ## Contributing
+
 <!--- mandatory section - do not change this! --->
 
 See the [Contributing Rules](CONTRIBUTING.md).

@@ -28,7 +28,7 @@ For information on using the Registry Cache configuration, see the [user documen
 
 ## Installation
 
-For information on how to add a module to your Kyma cluster, see [Adding and Deleting a Kyma Module](https://help.sap.com/docs/btp/sap-business-technology-platform/enable-and-disable-kyma-module?locale=en-US&version=Cloud&state=PRODUCTION).
+For information on how to add a module to your Kyma cluster, see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install.html).
 
 ## Development
 

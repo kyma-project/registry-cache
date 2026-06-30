@@ -27,7 +27,7 @@ The Registry Cache module consists of two main runtime components: the **Registr
 │  │ RegistryCache        │──►│  Webhook Server          │  │
 │  │ Reconciler           │   │  (TLS :9443)             │  │
 │  │                      │◄──│                          │  │
-│  │  state machine:      │   │  RegistryCacheConfig     │  │
+│  │  status:            │   │  RegistryCacheConfig     │  │
 │  │  ─ → Processing      │   │  Webhook (validate)      │  │
 │  │      → Ready         │   │                          │  │
 │  │      → Error         │   │  cert renewal            │  │
@@ -44,11 +44,11 @@ The Registry Cache module consists of two main runtime components: the **Registr
 └───────────────────────────────────────────────────────--──┘
 ```
 
-- **RegistryCache controller** — reconciles `RegistryCache` custom resources (CRs) and manages the installation state machine (see table below).
+- **RegistryCache controller** — reconciles `RegistryCache` custom resources (CRs) and drives status transitions (see table below).
 - **Webhook Server** — TLS server on port 9443 that validates `RegistryCacheConfig` resources on create and update.
 - **Certificate Manager** — watches TLS certificate files and rotates the CA bundle in `ValidatingWebhookConfiguration` on renewal.
 
-### RegistryCache State Machine
+### RegistryCache Status Transitions
 
 The controller drives the `RegistryCache` CR through the following states:
 

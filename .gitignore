@@ -26,6 +26,9 @@ go.work
 *.swo
 *~
 
+# macOS
+.DS_Store
+
 # installer output
 dist
 

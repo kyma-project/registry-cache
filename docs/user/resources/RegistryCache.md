@@ -8,7 +8,7 @@ kubectl get crd registrycaches.core.kyma-project.io -o yaml
 
 ## Overview
 
-A `RegistryCache` resource is created automatically by the module lifecycle manager when the Registry Cache module is installed on a Kyma runtime cluster. You do not create or delete this resource directly — it is managed by the module lifecycle infrastructure.
+A `RegistryCache` resource is created automatically by the module lifecycle manager when the Registry Cache module is installed on a Kyma runtime cluster. You do not create or delete this resource directly — the module lifecycle infrastructure manages it.
 
 The `RegistryCache` custom resource (CR) tracks whether the Registry Cache admission webhook is healthy and the module is fully operational. The controller reconciles this resource and transitions it through a set of well-defined states.
 

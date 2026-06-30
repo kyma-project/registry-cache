@@ -10,7 +10,7 @@ The Registry Cache feature is built on top of [Gardener's Registry Cache extensi
 
 The Registry Cache module provides the following features:
 - Caches container images from upstream registries to reduce outbound network traffic.
-- Supports private registries via credential Secrets referenced in `RegistryCacheConfig`.
+- Supports private registries using credential Secrets referenced in `RegistryCacheConfig`.
 - Configurable cache volume size and storage class per upstream registry.
 - Configurable garbage collection TTL; garbage collection can be disabled.
 - Proxy support for HTTP and HTTPS connections used by the cache.

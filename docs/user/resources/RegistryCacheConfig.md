@@ -39,7 +39,7 @@ This table lists all the possible parameters of a `RegistryCacheConfig` resource
 | **metadata.name** | Yes | — | Specifies the name of the CR. |
 | **metadata.namespace** | Yes | — | The namespace in which the CR is created. |
 | **spec.upstream** | Yes | — | The host (and optional port) of the upstream registry to cache. No scheme — for example, `docker.io` or `my-registry.example.com:5000`. Must be DNS-resolvable and unique across all `RegistryCacheConfig` resources in the cluster. |
-| **spec.remoteURL** | No | `https://<upstream>` | The remote registry URL in `<scheme><host>[:<port>]` format, where `<scheme>` is `https://` or `http://`. If set, used as `proxy.remoteurl` in the registry configuration and as the `server` field in the containerd hosts.toml file. |
+| **spec.remoteURL** | No | `https://<upstream>` | The remote registry URL in `<scheme><host>[:<port>]` format, where `<scheme>` is `https://` or `http://`. If set, used as `proxy.remoteurl` in the registry configuration and as the `server` field in the containerd [`hosts.toml`](https://github.com/containerd/containerd/blob/main/docs/hosts.md#server-field) file. |
 | **spec.secretReferenceName** | No | — | The name of a Kubernetes Secret in the same namespace containing credentials for the upstream registry. The Secret must be immutable and contain exactly the `username` and `password` data keys. |
 | **spec.volume.size** | No | `10Gi` | The size of the persistent volume for storing cached images. Immutable after creation. |
 | **spec.volume.storageClassName** | No | cluster default | The storage class for the persistent volume. Immutable after creation. |

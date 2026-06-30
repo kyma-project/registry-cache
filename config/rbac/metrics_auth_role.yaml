@@ -2,6 +2,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: metrics-auth-role
+  labels:
+    app.kubernetes.io/name: registry-cache
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/module: registry-cache
 rules:
 - apiGroups:
   - authentication.k8s.io

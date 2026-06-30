@@ -6,6 +6,7 @@ metadata:
     control-plane: controller-manager
     app.kubernetes.io/name: registry-cache
     app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/module: registry-cache
   name: controller-manager-metrics-monitor
   namespace: system
 spec:

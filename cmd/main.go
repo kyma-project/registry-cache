@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"crypto/fips140"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -87,6 +88,12 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	if fips140.Enabled() {
+		setupLog.Info("FIPS mode is enabled")
+	} else {
+		setupLog.Info("FIPS mode is disabled")
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will

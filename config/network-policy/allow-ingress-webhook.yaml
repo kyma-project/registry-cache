@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: registry-cache
     app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/module: registry-cache
     purpose: webhook-traffic
 spec:
   podSelector:

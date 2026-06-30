@@ -72,11 +72,3 @@ The Registry Cache module defines two custom resources:
 |-----------------------------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------|
 | [`RegistryCache`](resources/RegistryCache.md)             | Namespaced | Module CR managed by the lifecycle infrastructure. Tracks the installation health of the Registry Cache module. |
 | [`RegistryCacheConfig`](resources/RegistryCacheConfig.md) | Namespaced | User-created CR that configures a caching layer for a specific upstream container image registry.               |
-
-## Authorization
-
-<!-- TODO: Update when https://github.com/kyma-project/registry-cache/issues/77 is implemented -->
-
-## Resource Consumption
-
-<!-- TODO: link to SAP Help Portal Sizing topic when available -->

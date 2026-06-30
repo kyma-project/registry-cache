@@ -8,6 +8,7 @@ The Registry Cache feature is built on top of [Gardener's Registry Cache extensi
 
 ## Features
 
+The Registry Cache module provides the following features:
 - Caches container images from upstream registries to reduce outbound network traffic.
 - Supports private registries via credential Secrets referenced in `RegistryCacheConfig`.
 - Configurable cache volume size and storage class per upstream registry.
@@ -17,32 +18,9 @@ The Registry Cache feature is built on top of [Gardener's Registry Cache extensi
 
 ## Architecture
 
-The Registry Cache module consists of two main runtime components: the **RegistryCache controller** and the **RegistryCacheConfig admission webhook**. Both run in the same Registry Cache Manager process.
+The Registry Cache module consists of two main runtime components: the RegistryCache controller and the RegistryCacheConfig admission webhook. Both run in the same Registry Cache Manager process.
 
-```
-┌─────────────────────────────────────────────────────-──-──┐
-│                  Registry Cache Manager                   │
-│                                                           │
-│  ┌──────────────────────┐   ┌──────────────────────────┐  │
-│  │ RegistryCache        │──►│  Webhook Server          │  │
-│  │ Reconciler           │   │  (TLS :9443)             │  │
-│  │                      │◄──│                          │  │
-│  │  status:            │   │  RegistryCacheConfig     │  │
-│  │  ─ → Processing      │   │  Webhook (validate)      │  │
-│  │      → Ready         │   │                          │  │
-│  │      → Error         │   │  cert renewal            │  │
-│  │      → Deleting      │   └──────────┬───────────────┘  │
-│  └──────────────────────┘              │                  │
-│                                        ▼                  │
-│                             ┌─────────────────────────-─┐ │
-│                             │  Certificate Manager     -│ │
-│                             │  patches ValidatingWebhook│ │
-│                             │  Configuration CA bundle  │ │
-│                             └──────────────────────────-┘ │
-│                                                           │
-│  /healthz  /readyz  ──► webhook.StartedChecker()          │
-└───────────────────────────────────────────────────────--──┘
-```
+![registry-cache-arch](../assets/registry-cache-arch.drawio.svg)
 
 - **RegistryCache controller** — reconciles `RegistryCache` custom resources (CRs) and drives status transitions (see table below).
 - **Webhook Server** — TLS server on port 9443 that validates `RegistryCacheConfig` resources on create and update.

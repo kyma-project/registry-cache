@@ -16,7 +16,7 @@ export default [
     collapsed: true,
     items: [
       {
-        text: 'Image Pulls Fail with "404 manifest unknown" Despite Correct Image Name',
+        text: 'Registry Cache Does Not Cache Images from Private Registry',
         link: './troubleshooting/01-10-incorrect-credentials.md',
       },
     ],

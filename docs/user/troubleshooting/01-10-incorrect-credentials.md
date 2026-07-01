@@ -1,15 +1,15 @@
-# Image Pulls Fail with "404 manifest unknown" Despite Correct Image Name
+# Registry Cache Does Not Cache Images from Private Registry
 
 ## Symptom
 
-Image pulls from a cached upstream registry fail consistently with `404 manifest unknown` errors, even though the image exists in the upstream registry and the image name is correct.
+You configured Registry Cache with credentials for a private upstream registry. Image pulls in your workloads succeed, but you suspect or observe that images are not being served from the cache.
 
 > ### Note:
-> Registry Cache is designed to not impair operations if its configuration is incorrect. If you have configured an `imagePullSecret` on your workloads (recommended), image pulls still succeed using direct fallback to the upstream registry even when the Registry Cache credentials are incorrect. This means image pull failures may not be visible even with misconfigured credentials — the only way to verify the cache is working correctly is to check the registry cache Pod logs as described below.
+> Registry Cache is designed to not impair operations if its configuration is incorrect. If you have configured an `imagePullSecret` on your workloads (recommended), image pulls still succeed using direct fallback to the upstream registry even when the Registry Cache credentials are incorrect. This means misconfigured credentials are not immediately visible — the only way to verify the cache is working correctly is to check the registry cache Pod logs as described below.
 
 ## Cause
 
-The upstream registry returns `404` instead of `401` when credentials are incorrect. This makes a credential failure indistinguishable from a missing image at the log level.
+When Registry Cache credentials are incorrect, the registry cache Pod in `kube-system` receives a `404` response from the upstream registry instead of `401`. This makes a credential failure indistinguishable from a missing image at the log level. Meanwhile, image pulls in workloads continue to succeed via the `imagePullSecret` fallback, so the misconfiguration is not immediately visible.
 
 ## Solution
 

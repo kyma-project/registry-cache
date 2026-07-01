@@ -35,6 +35,17 @@ The **volume.size** field specifies the size of the persistent volume used to st
 
 You can create multiple `RegistryCacheConfig` resources to cache different upstream registries. Each resource must have a unique name, and each upstream registry must be unique across all resources in the cluster.
 
+After creating a `RegistryCacheConfig` resource, verify that the configuration was processed successfully by checking the resource status:
+
+```bash
+kubectl get registrycacheconfig <name> -n <namespace>
+```
+
+The `STATUS` column shows the current state:
+- `Pending` — KCP is processing the configuration.
+- `Ready` — the caching layer has been configured successfully.
+- `Error` — the configuration failed. Check `status.conditions` for details, or see [RegistryCacheConfig](resources/RegistryCacheConfig.md#state-values).
+
 ## Providing Credentials for Upstream Repository
 
 If the upstream registry requires authentication, create a Kubernetes Secret in the same namespace as the `RegistryCacheConfig` resource and reference it in the **spec.secretReferenceName** field.

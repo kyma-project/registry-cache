@@ -8,7 +8,7 @@
 
 ## Unit and Controller Tests
 
-Unit tests use `controller-runtime/envtest` to spin up a local Kubernetes API server via real kube-apiserver/etcd child processes. No external cluster is required, but the envtest binaries must be present locally. Before running tests for the first time, run:
+Unit tests use `controller-runtime/envtest` to spin up a local Kubernetes API server using real kube-apiserver/etcd child processes. No external cluster is required, but the envtest binaries must be present locally. Before running tests for the first time, run:
 
 ```bash
 make setup-envtest

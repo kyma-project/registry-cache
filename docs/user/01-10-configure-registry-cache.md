@@ -35,16 +35,16 @@ The **volume.size** field specifies the size of the persistent volume used to st
 
 You can create multiple `RegistryCacheConfig` resources to cache different upstream registries. Each resource must have a unique name, and each upstream registry must be unique across all resources in the cluster.
 
-After creating a `RegistryCacheConfig` resource, verify that the configuration was processed successfully by checking the resource status:
+After creating a `RegistryCacheConfig` resource, verify that KCP processed it successfully by checking the resource status:
 
 ```bash
-kubectl get registrycacheconfig <name> -n <namespace>
+kubectl get registrycacheconfig <name> -n <namespace> -o jsonpath='{.status.state}'
 ```
 
-The `STATUS` column shows the current state:
+The expected output values are:
 - `Pending` — KCP is processing the configuration.
 - `Ready` — the caching layer has been configured successfully.
-- `Error` — the configuration failed. Check `status.conditions` for details, or see [RegistryCacheConfig](resources/RegistryCacheConfig.md#state-values).
+- `Error` — KCP-side processing failed. Check `status.conditions` for details, or see [RegistryCacheConfig](resources/RegistryCacheConfig.md#state-values).
 
 ## Providing Credentials for Upstream Repository
 
@@ -189,28 +189,28 @@ For all available configuration fields and their defaults, see [RegistryCacheCon
 
 ## Validation of Registry Cache Configuration
 
-After applying the `RegistryCacheConfig` resource, the Registry Cache webhook validates the configuration before it takes effect.
-If the configuration is valid, the resource status transitions from `Pending` to `Ready` and KCP configures the caching layer.
-If there are issues, the status transitions from `Pending` to `Error` and the status conditions contain an error message.
+When you apply a `RegistryCacheConfig` resource, the Registry Cache webhook validates the configuration on the SKR side before the Kubernetes API accepts it. If the configuration is invalid, the API rejects the request and returns an error — no CR is created.
 
 Example error message:
 ```
 admission webhook "registrycacheconfig-v1beta1.kb.io" denied the request: spec.upstream: Invalid value: "dockerrrrr.io": upstream is not DNS resolvable
 ```
 
+If the CR is accepted, KCP processes it. The status transitions from `Pending` to `Ready` on success, or to `Error` if KCP-side processing fails. Check `status.conditions` for details.
+
 The following table describes the validation rules for each field:
 
-| Field | Validation | Example |
-|---|---|---|
-| **spec.upstream** | Must be a valid DNS-resolvable host (no scheme). Must be unique across all `RegistryCacheConfig` resources in the cluster. Port, if specified, must be in the range 1–65535. | None |
-| **spec.remoteURL** | Must have the format `<scheme><host>[:<port>]` where `<scheme>` is `https://` or `http://` and `<host>[:<port>]` corresponds to the upstream. Must be DNS resolvable. | None |
-| **spec.secretReferenceName** | The referenced Secret must exist in the same namespace as the `RegistryCacheConfig` resource, be immutable, and contain exactly the `username` and `password` data keys. | None |
-| **spec.volume.size** | Must be a positive value in a format recognized by Go's `resource.Quantity` (for example, `10Gi`). Immutable after creation. | 10Gi |
-| **spec.volume.storageClassName** | The referenced storage class must be available. Immutable after creation. | None |
-| **spec.garbageCollection.ttl** | Must be in a format recognized by Go's `time.ParseDuration` (for example, `24h`). Set to `0s` to disable garbage collection. Cannot be re-enabled once disabled. | 168h |
-| **spec.proxy.httpProxy** | Must be a valid URL starting with `http://` or `https://`. | None |
-| **spec.proxy.httpsProxy** | Must be a valid URL starting with `http://` or `https://`. | None |
-| **spec.http.tls** | Must be a valid boolean indicating whether TLS is enabled. | None |
+| Field | Validation |
+|---|---|
+| **spec.upstream** | Must be a valid DNS-resolvable host (no scheme). Must be unique across all `RegistryCacheConfig` resources in the cluster. Port, if specified, must be in the range 1–65535. |
+| **spec.remoteURL** | Must have the format `<scheme><host>[:<port>]` where `<scheme>` is `https://` or `http://` and `<host>[:<port>]` corresponds to the upstream. Must be DNS resolvable. |
+| **spec.secretReferenceName** | The referenced Secret must exist in the same namespace as the `RegistryCacheConfig` resource, be immutable, and contain exactly the `username` and `password` data keys. |
+| **spec.volume.size** | Must be a positive value in a format recognized by Go's `resource.Quantity` (for example, `10Gi`). Immutable after creation. |
+| **spec.volume.storageClassName** | The referenced storage class must be available. Immutable after creation. |
+| **spec.garbageCollection.ttl** | Must be in a format recognized by Go's `time.ParseDuration` (for example, `24h`). Set to `0s` to disable garbage collection. Cannot be re-enabled once disabled. |
+| **spec.proxy.httpProxy** | Must be a valid URL starting with `http://` or `https://`. |
+| **spec.proxy.httpsProxy** | Must be a valid URL starting with `http://` or `https://`. |
+| **spec.http.tls** | Must be a valid boolean indicating whether TLS is enabled. |
 
 ## Managing Registry Cache Configuration
 

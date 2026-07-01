@@ -2,7 +2,7 @@
 
 ## What Is Registry Cache?
 
-The Registry Cache Kyma module adds a caching layer for container image registries in SAP BTP, Kyma runtime instances. It reduces outbound traffic to public registries, improving performance and reliability of image pulls. It also supports access to private registries by allowing you to provide credentials for the caching layer to use when authenticating against those registries.
+The Registry Cache Kyma module adds a caching layer for container image registries in SAP BTP, Kyma runtime instances. It reduces outbound traffic to upstream registries, improving image pull performance. It also supports access to private registries by allowing you to provide credentials for the caching layer to use when authenticating against those registries.
 
 The Registry Cache feature is built on top of [Gardener's Registry Cache extension](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/).
 

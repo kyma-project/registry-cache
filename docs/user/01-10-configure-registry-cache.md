@@ -174,19 +174,7 @@ Credential Secrets are immutable and cannot be updated in place. To rotate crede
 
 ## Advanced Configuration
 
-The following table describes all fields in the `RegistryCacheConfig` resource:
-
-| Field | Required | Description | Default value |
-|---|---|---|---|
-| **spec.upstream** | Yes | The host (and optional port) of the upstream container image registry to cache images from. No scheme — e.g. `docker.io` or `my-registry.example.com:5000`. | None |
-| **spec.remoteURL** | No | The remote registry URL. If defined, it is set as `proxy.remoteurl` in the registry [configuration](https://github.com/distribution/distribution/blob/main/docs/content/recipes/mirror.md#configure-the-cache) and as the `server` field in the containerd [hosts.toml](https://github.com/containerd/containerd/blob/main/docs/hosts.md#server-field) file. Defaults to `https://<upstream>`. | None |
-| **spec.secretReferenceName** | No | The name of the Kubernetes Secret containing credentials for the upstream registry. | None |
-| **spec.volume.size** | No | The size of the persistent volume for storing cached images. | 10Gi |
-| **spec.volume.storageClassName** | No | The storage class for the persistent volume. If not specified, the cluster's default storage class is used. | None |
-| **spec.garbageCollection.ttl** | No | The time-to-live (TTL) for cached images. Images not accessed within this duration are eligible for garbage collection. Set to `0s` to disable garbage collection. | 168h (7 days) |
-| **spec.proxy.httpProxy** | No | Proxy server for HTTP connections used by the Registry Cache. | None |
-| **spec.proxy.httpsProxy** | No | Proxy server for HTTPS connections used by the Registry Cache. | None |
-| **spec.http.tls** | No | Indicates whether TLS is enabled for the HTTP server of the Registry Cache. | true |
+For all available configuration fields and their defaults, see [RegistryCacheConfig](resources/RegistryCacheConfig.md).
 
 ## Validation of Registry Cache Configuration
 

@@ -9,7 +9,7 @@ You configured Registry Cache with credentials for a private upstream registry. 
 
 ## Cause
 
-When Registry Cache credentials are incorrect, the registry cache Pod in `kube-system` receives a `404` response from the upstream registry instead of `401`. This makes a credential failure indistinguishable from a missing image at the log level. Meanwhile, image pulls in workloads continue to succeed via the `imagePullSecret` fallback, so the misconfiguration is not immediately visible.
+When Registry Cache credentials are incorrect, the registry cache Pod in `kube-system` receives an error response from the upstream registry. Depending on the upstream registry, the error may be indistinguishable from a missing image at the log level — for example, Artifact Registry returns `404` instead of an authentication error. Meanwhile, image pulls in workloads continue to succeed via the `imagePullSecret` fallback, so the misconfiguration is not immediately visible.
 
 ## Solution
 

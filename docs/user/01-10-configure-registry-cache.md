@@ -190,8 +190,8 @@ For all available configuration fields and their defaults, see [RegistryCacheCon
 ## Validation of Registry Cache Configuration
 
 After applying the `RegistryCacheConfig` resource, the Registry Cache webhook validates the configuration before it takes effect.
-If the configuration is valid, the resource status transitions from `Pending` to `Ready` and the caching layer is configured.
-If there are issues, the status transitions from `Pending` to `Error` and an error message is provided in the status conditions.
+If the configuration is valid, the resource status transitions from `Pending` to `Ready` and KCP configures the caching layer.
+If there are issues, the status transitions from `Pending` to `Error` and the status conditions contain an error message.
 
 Example error message:
 ```

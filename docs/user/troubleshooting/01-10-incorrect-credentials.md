@@ -13,7 +13,7 @@ When Registry Cache credentials are incorrect, the registry cache Pod in `kube-s
 
 ## Solution
 
-The registry cache Pods are created in `kube-system` by the Gardener extension. They are named after the upstream registry host they cache.
+The Gardener extension creates the registry cache Pods in `kube-system`. They are named after the upstream registry host they cache.
 
 1. List the registry cache Pods for the affected upstream:
 

@@ -189,7 +189,7 @@ For all available configuration fields and their defaults, see [RegistryCacheCon
 
 ## Validation of Registry Cache Configuration
 
-When you apply a `RegistryCacheConfig` resource, the Registry Cache webhook validates the configuration on the SKR side before the Kubernetes API accepts it. If the configuration is invalid, the API rejects the request and returns an error — no CR is created.
+When you apply a `RegistryCacheConfig` resource, the Registry Cache webhook validates the configuration on the Kyma runtime side before the Kubernetes API accepts it. If the configuration is invalid, the API rejects the request and returns an error — no CR is created.
 
 Example error message:
 ```

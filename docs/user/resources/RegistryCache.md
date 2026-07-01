@@ -73,7 +73,7 @@ These are the resources related to this CR:
 
 | Custom resource | Description |
 |---|---|
-| `RegistryCacheConfig` | The user-facing resource for configuring a caching layer for a specific upstream registry. See [docs/user/README.md](../README.md). |
+| `RegistryCacheConfig` | The user-facing resource for configuring a caching layer for a specific upstream registry. See [Registry Cache Module](../README.md). |
 
 These components use this CR:
 

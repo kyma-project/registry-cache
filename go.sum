@@ -40,8 +40,8 @@ github.com/fluent/fluent-operator/v3 v3.5.0 h1:soNOaXLmN7VQg1mlHDDKGQ9itYpvgycWs
 github.com/fluent/fluent-operator/v3 v3.5.0/go.mod h1:6phBFSu5/+81dbwfizIprNirr7VlbnkhcawbSe7r7NM=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
-github.com/fxamacker/cbor/v2 v2.9.0 h1:NpKPmjDBgUfBms6tr6JZkTHtfFGcMKsw3eGcmD/sapM=
-github.com/fxamacker/cbor/v2 v2.9.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
+github.com/fxamacker/cbor/v2 v2.9.2 h1:X4Ksno9+x3cz0TZv69ec1hxP/+tymuR8PXQJyDwfh78=
+github.com/fxamacker/cbor/v2 v2.9.2/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/gardener/cert-management v0.19.0 h1:BNumdw748Pg9798NzxHmmpKuXFRLHSPuvcPKQHOiFcw=
 github.com/gardener/cert-management v0.19.0/go.mod h1:u5OKwiDyUdCuW9vhDV92ozCVkynXUBrYCMHr4rVNiCY=
 github.com/gardener/etcd-druid/api v0.33.0 h1:YwgsYYldaLig2laJMAAMX/dg9/XsQx/LPz8+iL52V6w=

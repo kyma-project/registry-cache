@@ -5,7 +5,7 @@
 [![golangci lint](https://badgers.space/github/checks/kyma-project/registry-cache/main/golangci-lint)](https://github.com/kyma-project/registry-cache/actions/workflows/lint.yaml)
 [![latest release](https://badgers.space/github/release/kyma-project/registry-cache)](https://github.com/kyma-project/registry-cache/releases/latest)
 
-# Registry Cache Module
+# Registry Cache
 
 This repository contains the source code for the Registry Cache module.
 
@@ -13,28 +13,31 @@ This repository contains the source code for the Registry Cache module.
 
 With the Registry Cache module, you can enable and configure a caching layer for container image registries used in your SAP BTP, Kyma runtime instances.  
 This feature reduces the amount of outbound traffic from your runtimes to public registries, improving performance and reliability of image pulls.  
-Additionally, it allows to configure access to private registries by providing credentials that will be used by the caching layer to authenticate against those registries.
+Additionally, it allows configuring access to private registries by providing credentials that the caching layer uses to authenticate against them.
 
-For information on using the registry cache configuration, see the [user documentation](./docs/user/README.md).
+For information on using the Registry Cache configuration, see the [user documentation](./docs/user/README.md).
 
 > ### Note:
-> As this feature is implemented as part of Kyma Control Plane, it is available only for SAP BTP, Kyma runtime.  
-> Installing this module in a self-managed Kyma cluster and providing registry cache configuration will have no effect.
+> Since this feature is implemented as part of Kyma Control Plane, it is available only for SAP BTP, Kyma runtime.  
+> Installing this module in a self-managed Kyma cluster and providing Registry Cache configuration will have no effect.
 
 ## Prerequisites
 
-- A managed Kyma Runtime instance running on BTP platform.
+- A managed Kyma runtime instance running on the SAP BTP platform.
 - Access to Kyma dashboard (Busola) or kubectl with kubeconfig for the Kyma runtime cluster.
 
 ## Installation
-For information on how to add a module to your Kyma cluster, see [Adding and Deleting a Kyma Module](https://help.sap.com/docs/btp/sap-business-technology-platform/enable-and-disable-kyma-module).
+
+For information on how to add a module to your Kyma cluster, see [Quick Install](https://kyma-project.io/02-get-started/01-quick-install.html).
 
 ## Development
+
+For developer setup, architecture overview, and testing strategy, see the [contributor documentation](./docs/contributor/).
 
 ### Prerequisites
 
 - Access to a Kubernetes cluster
-- [Go](https://go.dev/)
+- [Go](https://go.dev/) 1.26.4 or later
 - [k3d](https://k3d.io/)
 - [Docker](https://www.docker.com/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
@@ -71,11 +74,11 @@ For information on how to add a module to your Kyma cluster, see [Adding and Del
     ```
 
 5. Patch deployment:
-```
-kubectl patch deployment registry-cache-controller-manager -n kyma-system \
-    --type='json' \
-    -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"Never"}]'
-```
+    ```
+    kubectl patch deployment registry-cache-controller-manager -n kyma-system \
+        --type='json' \
+        -p='[{"op":"replace","path":"/spec/template/spec/containers/0/imagePullPolicy","value":"Never"}]'
+    ```
 
 ### Using Registry Cache Operator
 

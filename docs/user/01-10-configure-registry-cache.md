@@ -154,30 +154,14 @@ Credential Secrets are immutable and cannot be updated in place. To rotate crede
    EOF
    ```
 
-2. Delete the existing `RegistryCacheConfig` resource:
+2. Update `spec.secretReferenceName` in the existing `RegistryCacheConfig` resource to reference the new Secret:
 
    ```bash
-   kubectl delete registrycacheconfig <name> -n <namespace>
+   kubectl patch registrycacheconfig <name> -n <namespace> \
+     --type=merge -p '{"spec":{"secretReferenceName":"rc-secret-v2"}}'
    ```
 
-3. Recreate the `RegistryCacheConfig` resource referencing the new Secret:
-
-   ```bash
-   kubectl create -f - <<EOF
-   apiVersion: core.kyma-project.io/v1beta1
-   kind: RegistryCacheConfig
-   metadata:
-     name: <name>
-     namespace: <namespace>
-   spec:
-     upstream: <upstream>
-     secretReferenceName: rc-secret-v2
-     volume:
-       size: <size>
-   EOF
-   ```
-
-4. Once the new `RegistryCacheConfig` is in `Ready` state, delete the old Secret:
+3. Once the `RegistryCacheConfig` is in `Ready` state, delete the old Secret:
 
    ```bash
    kubectl delete secret rc-secret -n <namespace>

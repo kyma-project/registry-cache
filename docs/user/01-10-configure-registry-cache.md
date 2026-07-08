@@ -154,7 +154,7 @@ Credential Secrets are immutable and cannot be updated in place. To rotate crede
    EOF
    ```
 
-2. Update `spec.secretReferenceName` in the existing `RegistryCacheConfig` resource to reference the new Secret:
+2. Update **spec.secretReferenceName** in the existing `RegistryCacheConfig` resource to reference the new Secret:
 
    ```bash
    kubectl patch registrycacheconfig <name> -n <namespace> \
@@ -182,7 +182,8 @@ admission webhook "registrycacheconfig-v1beta1.kb.io" denied the request: spec.u
 
 If the CR is accepted, KCP processes it. The status transitions from `Pending` to `Ready` on success, or to `Error` if KCP-side processing fails. Check `status.conditions` for details.
 
-> **Note:** KCP periodically reconciles `RegistryCacheConfig` resources. During reconciliation, a CR in `Ready` state transitions back to `Pending` and then returns to `Ready` once reconciliation completes. This is expected behavior.
+> ### Note:
+> KCP periodically reconciles `RegistryCacheConfig` resources. During reconciliation, a CR in `Ready` state transitions back to `Pending` and then returns to `Ready` once reconciliation completes. This is expected behavior.
 
 The following table describes the validation rules for each field:
 

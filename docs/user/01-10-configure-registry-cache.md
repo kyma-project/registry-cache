@@ -154,30 +154,14 @@ Credential Secrets are immutable and cannot be updated in place. To rotate crede
    EOF
    ```
 
-2. Delete the existing `RegistryCacheConfig` resource:
+2. Update **spec.secretReferenceName** in the existing `RegistryCacheConfig` resource to reference the new Secret:
 
    ```bash
-   kubectl delete registrycacheconfig <name> -n <namespace>
+   kubectl patch registrycacheconfig <name> -n <namespace> \
+     --type=merge -p '{"spec":{"secretReferenceName":"rc-secret-v2"}}'
    ```
 
-3. Recreate the `RegistryCacheConfig` resource referencing the new Secret:
-
-   ```bash
-   kubectl create -f - <<EOF
-   apiVersion: core.kyma-project.io/v1beta1
-   kind: RegistryCacheConfig
-   metadata:
-     name: <name>
-     namespace: <namespace>
-   spec:
-     upstream: <upstream>
-     secretReferenceName: rc-secret-v2
-     volume:
-       size: <size>
-   EOF
-   ```
-
-4. Once the new `RegistryCacheConfig` is in `Ready` state, delete the old Secret:
+3. Once the `RegistryCacheConfig` is in `Ready` state, delete the old Secret:
 
    ```bash
    kubectl delete secret rc-secret -n <namespace>
@@ -197,6 +181,9 @@ admission webhook "registrycacheconfig-v1beta1.kb.io" denied the request: spec.u
 ```
 
 If the CR is accepted, KCP processes it. The status transitions from `Pending` to `Ready` on success, or to `Error` if KCP-side processing fails. Check `status.conditions` for details.
+
+> ### Note:
+> KCP periodically reconciles `RegistryCacheConfig` resources. During reconciliation, a CR in `Ready` state transitions back to `Pending` and then returns to `Ready` once reconciliation completes. This is expected behavior.
 
 The following table describes the validation rules for each field:
 

@@ -1,2 +1,5 @@
 resources:
-- allow-metrics-traffic.yaml
+- allow-egress-apiserver.yaml
+- allow-egress-dns.yaml
+- allow-ingress-metrics.yaml
+- allow-ingress-webhook.yaml

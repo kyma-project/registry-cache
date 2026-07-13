@@ -8,7 +8,8 @@ import (
 	"time"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
-	"k8s.io/utils/ptr"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,16 +57,18 @@ func BuildUpdateCABundle(
 
 		validatingWebhook.Kind = "ValidatingWebhookConfiguration"
 		validatingWebhook.APIVersion = "admissionregistration.k8s.io/v1"
-		validatingWebhook.ManagedFields = nil
 
 		patchCtx, cancelPatch := context.WithTimeout(ctx, 5*time.Second)
 		defer cancelPatch()
 
 		logger.Info("attempting to patch validating webhook configuration", "name", validatingWebhook.Name)
 
-		return rtClient.Patch(patchCtx, &validatingWebhook, client.Apply, &client.PatchOptions{
-			FieldManager: opts.FieldManager,
-			Force:        ptr.To(true),
-		})
+		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&validatingWebhook)
+		if err != nil {
+			return fmt.Errorf("unable to convert validating webhook configuration to unstructured: %w", err)
+		}
+		u := &unstructured.Unstructured{Object: m}
+		return rtClient.Apply(patchCtx, client.ApplyConfigurationFromUnstructured(u),
+			client.ForceOwnership, client.FieldOwner(opts.FieldManager))
 	}
 }

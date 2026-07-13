@@ -2,7 +2,6 @@ package certificate_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-project/registry-cache/internal/webhook/certificate"
@@ -10,7 +9,6 @@ import (
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -87,41 +85,42 @@ func Test_BuildUpdateCABundle(t *testing.T) {
 		WithObjects(&mWhCfg).
 		WithScheme(scheme).
 		WithInterceptorFuncs(interceptor.Funcs{
-			Patch: buildPatchFake(&mWhCfg),
+			Apply: buildApplyFake(&mWhCfg),
 		}).Build()
 
 	err := certificate.BuildUpdateCABundle(ctx, fakeClient, certificate.BuildUpdateCABundleOpts{
-		Name:     "test-me",
-		CABundle: []byte("updated"),
+		Name:         "test-me",
+		CABundle:     []byte("updated"),
+		FieldManager: "test-manager",
 	})()
 
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("updated"), mWhCfg.Webhooks[0].ClientConfig.CABundle)
 }
 
-func buildPatchFake(c *admissionregistration.ValidatingWebhookConfiguration) func(context.Context,
+func buildApplyFake(c *admissionregistration.ValidatingWebhookConfiguration) func(context.Context,
 	client.WithWatch,
-	client.Object,
-	client.Patch,
-	...client.PatchOption) error {
+	runtime.ApplyConfiguration,
+	...client.ApplyOption) error {
 
 	return func(ctx context.Context,
 		clnt client.WithWatch,
-		obj client.Object,
-		patch client.Patch, opts ...client.PatchOption) error {
+		obj runtime.ApplyConfiguration,
+		opts ...client.ApplyOption) error {
 
-		if patch.Type() != types.ApplyPatchType {
-			return clnt.Patch(ctx, obj, patch, opts...)
+		type unstructuredContent interface {
+			UnstructuredContent() map[string]interface{}
 		}
-
-		mWhCfg, ok := obj.(*admissionregistration.ValidatingWebhookConfiguration)
-		*c = *mWhCfg
-
+		uc, ok := obj.(unstructuredContent)
 		if !ok {
-			return fmt.Errorf("failed to cast object to shoot")
+			return clnt.Apply(ctx, obj, opts...)
 		}
 
-		c.Generation++
+		var updated admissionregistration.ValidatingWebhookConfiguration
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(uc.UnstructuredContent(), &updated); err != nil {
+			return err
+		}
+		*c = updated
 		return nil
 	}
 }

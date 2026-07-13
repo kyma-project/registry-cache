@@ -18,7 +18,7 @@ jobs:
       image_registry: europe-docker.pkg.dev/kyma-project/prod/registry-cache
     steps:
       - name: Checkout push/tag ref
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - id: tag
         if: github.event_name == 'push' && github.ref_type == 'tag'
@@ -32,7 +32,7 @@ jobs:
       contents: write  # Needed for creating releases and uploading assets
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -68,7 +68,7 @@ jobs:
           IMG: ${{ needs.setup.outputs.image_registry }}:${{ needs.setup.outputs.tag_experimental }}
 
       - name: Create Release and Generate Notes
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: | 
             ./config/crd/crd-docs.md

@@ -1,0 +1,4 @@
+name: kyma-project.io/kyma-runtime/kyma-components/registry-cache
+team: kyma/framefrog
+images:
+  - europe-docker.pkg.dev/kyma-project/prod/registry-cache:latest

@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -43,15 +44,16 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: runtime.NewScheme()})
+	scheme := runtime.NewScheme()
+	Expect(clientgoscheme.AddToScheme(scheme)).To(Succeed())
+	Expect(rcapi.AddToScheme(scheme)).To(Succeed())
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	err = rcapi.AddToScheme(k8sClient.Scheme())
-	Expect(err).NotTo(HaveOccurred())
-
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: k8sClient.Scheme(),
+		Scheme: scheme,
 		Metrics: server.Options{
 			BindAddress: ":8084",
 		},

@@ -168,7 +168,7 @@ func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context
 func (r *RegistryCacheReconciler) ssaStatus(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
-	if err := r.Status().Patch(ctx, obj, client.Apply,
+	if err := r.Status().Patch(ctx, obj, client.Apply, //nolint:staticcheck
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}}); err != nil {
 		return fmt.Errorf("error while patching status: %w", err)
 	}
@@ -179,7 +179,7 @@ func (r *RegistryCacheReconciler) ssaStatus(ctx context.Context, obj client.Obje
 func (r *RegistryCacheReconciler) ssa(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
-	if err := r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner)); err != nil {
+	if err := r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner)); err != nil { //nolint:staticcheck
 		return fmt.Errorf("error while patching object: %w", err)
 	}
 	return nil

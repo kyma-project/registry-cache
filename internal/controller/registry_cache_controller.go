@@ -188,7 +188,7 @@ func (r *RegistryCacheReconciler) ssa(ctx context.Context, obj client.Object) er
 	if err != nil {
 		return fmt.Errorf("error converting object to unstructured: %w", err)
 	}
-	if err := r.Client.Apply(ctx, client.ApplyConfigurationFromUnstructured(u),
+	if err := r.Apply(ctx, client.ApplyConfigurationFromUnstructured(u),
 		client.ForceOwnership, client.FieldOwner(fieldOwner)); err != nil {
 		return fmt.Errorf("error while patching object: %w", err)
 	}

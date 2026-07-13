@@ -127,9 +127,7 @@ func TestDo(t *testing.T) {
 			field.Invalid(env.volumeSizeFieldPath, InvalidVolumeSize, "must be greater than 0"),
 			field.Invalid(env.garbageCollectionTTLFieldPath, "-1ns", "ttl must be a non-negative duration"),
 			field.Invalid(env.httpProxyFieldPath, InvalidHttpProxyUrl, "url must start with 'http://' or 'https://'"),
-			field.Invalid(env.httpProxyFieldPath, InvalidHttpProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
 			field.Invalid(env.httpsProxyFieldPath, InvalidHttpsProxyUrl, "url must start with 'http://' or 'https://'"),
-			field.Invalid(env.httpsProxyFieldPath, InvalidHttpsProxyUrl, "subdomain must consist of lower case alphanumeric characters"),
 		}, errs)
 	})
 

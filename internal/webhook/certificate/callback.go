@@ -63,12 +63,9 @@ func BuildUpdateCABundle(
 
 		logger.Info("attempting to patch validating webhook configuration", "name", validatingWebhook.Name)
 
-		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&validatingWebhook)
-		if err != nil {
-			return fmt.Errorf("unable to convert validating webhook configuration to unstructured: %w", err)
-		}
-		u := &unstructured.Unstructured{Object: m}
-		return rtClient.Apply(patchCtx, client.ApplyConfigurationFromUnstructured(u),
-			client.ForceOwnership, client.FieldOwner(opts.FieldManager))
+		return rtClient.Patch(patchCtx, &validatingWebhook, client.Apply, &client.PatchOptions{ //nolint:staticcheck
+			FieldManager: opts.FieldManager,
+			Force:        ptr.To(true),
+		})
 	}
 }

@@ -63,7 +63,7 @@ func BuildUpdateCABundle(
 
 		logger.Info("attempting to patch validating webhook configuration", "name", validatingWebhook.Name)
 
-		return rtClient.Patch(patchCtx, &validatingWebhook, client.Apply, &client.PatchOptions{
+		return rtClient.Patch(patchCtx, &validatingWebhook, client.Apply, &client.PatchOptions{ //nolint:staticcheck
 			FieldManager: opts.FieldManager,
 			Force:        ptr.To(true),
 		})

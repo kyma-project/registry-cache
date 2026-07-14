@@ -8,8 +8,7 @@ import (
 	"time"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -57,13 +56,14 @@ func BuildUpdateCABundle(
 
 		validatingWebhook.Kind = "ValidatingWebhookConfiguration"
 		validatingWebhook.APIVersion = "admissionregistration.k8s.io/v1"
+		validatingWebhook.ManagedFields = nil
 
 		patchCtx, cancelPatch := context.WithTimeout(ctx, 5*time.Second)
 		defer cancelPatch()
 
 		logger.Info("attempting to patch validating webhook configuration", "name", validatingWebhook.Name)
 
-		return rtClient.Patch(patchCtx, &validatingWebhook, client.Apply, &client.PatchOptions{ //nolint:staticcheck
+		return rtClient.Patch(patchCtx, &validatingWebhook, client.Apply, &client.PatchOptions{
 			FieldManager: opts.FieldManager,
 			Force:        ptr.To(true),
 		})

@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/registry-cache/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	kevents "k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -27,7 +27,7 @@ const (
 type RegistryCacheReconciler struct {
 	client.Client
 	*runtime.Scheme
-	record.EventRecorder
+	kevents.EventRecorder
 	healthz.Checker
 }
 
@@ -35,7 +35,7 @@ func NewRegistryCacheReconciler(mgr ctrl.Manager, check healthz.Checker) *Regist
 	return &RegistryCacheReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor("registry-cache-controller"),
+		EventRecorder: mgr.GetEventRecorder("registry-cache-controller"),
 		Checker:       check,
 	}
 }
@@ -108,7 +108,7 @@ func (r *RegistryCacheReconciler) handleErrorState(ctx context.Context, objectIn
 func (r *RegistryCacheReconciler) handleReadyState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
 	// check if webhook is still ready
 	if err := r.Checker(nil); err != nil {
-		r.Event(objectInstance, "Error", "Webhook server not ready", err.Error())
+		r.Eventf(objectInstance, nil, "Warning", "Webhook server not ready", "WebhookNotReady", err.Error())
 		return r.setInstanceStatus(ctx, objectInstance, v1beta1.StateError, metav1.ConditionFalse)
 	}
 	return nil
@@ -118,7 +118,7 @@ func (r *RegistryCacheReconciler) handleDeletingState(ctx context.Context, objec
 	logger := log.FromContext(ctx)
 	logger.Info("RegistryCache resource deleting state processing")
 
-	r.Event(objectInstance, "Normal", "Deleting", "deleting webhook")
+	r.Eventf(objectInstance, nil, "Normal", "Deleting", "DeletingWebhook", "deleting webhook")
 
 	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {
 		logger.Info("Removing finalizer")
@@ -155,12 +155,12 @@ func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context
 	objectInstance.Status = *status
 
 	if err := r.ssaStatus(ctx, objectInstance); err != nil {
-		r.Event(objectInstance, "Warning", "ErrorUpdatingStatus",
+		r.Eventf(objectInstance, nil, "Warning", "ErrorUpdatingStatus", "ErrorUpdatingStatus",
 			fmt.Sprintf("updating state to %v", string(status.State)))
 		return fmt.Errorf("error while updating status %s to: %w", status.State, err)
 	}
 
-	r.Event(objectInstance, "Normal", "StatusUpdated", fmt.Sprintf("updating state to %v", string(status.State)))
+	r.Eventf(objectInstance, nil, "Normal", "StatusUpdated", "StatusUpdated", fmt.Sprintf("updating state to %v", string(status.State)))
 	return nil
 }
 

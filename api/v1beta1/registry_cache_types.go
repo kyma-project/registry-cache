@@ -119,3 +119,7 @@ type RegistryCacheList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RegistryCache `json:"items"`
 }
+
+func init() {
+	SchemeBuilder.Register(&RegistryCache{}, &RegistryCacheList{})
+}

@@ -7,9 +7,8 @@ import (
 
 	"github.com/kyma-project/registry-cache/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/events"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -28,7 +27,7 @@ const (
 type RegistryCacheReconciler struct {
 	client.Client
 	*runtime.Scheme
-	events.EventRecorder
+	record.EventRecorder
 	healthz.Checker
 }
 
@@ -36,7 +35,7 @@ func NewRegistryCacheReconciler(mgr ctrl.Manager, check healthz.Checker) *Regist
 	return &RegistryCacheReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorder("registry-cache-controller"),
+		EventRecorder: mgr.GetEventRecorderFor("registry-cache-controller"),
 		Checker:       check,
 	}
 }
@@ -109,7 +108,7 @@ func (r *RegistryCacheReconciler) handleErrorState(ctx context.Context, objectIn
 func (r *RegistryCacheReconciler) handleReadyState(ctx context.Context, objectInstance *v1beta1.RegistryCache) error {
 	// check if webhook is still ready
 	if err := r.Checker(nil); err != nil {
-		r.Eventf(objectInstance, nil, "Warning", "WebhookServerNotReady", "HealthCheck", err.Error())
+		r.Event(objectInstance, "Error", "Webhook server not ready", err.Error())
 		return r.setInstanceStatus(ctx, objectInstance, v1beta1.StateError, metav1.ConditionFalse)
 	}
 	return nil
@@ -119,7 +118,7 @@ func (r *RegistryCacheReconciler) handleDeletingState(ctx context.Context, objec
 	logger := log.FromContext(ctx)
 	logger.Info("RegistryCache resource deleting state processing")
 
-	r.Eventf(objectInstance, nil, "Normal", "Deleting", "Deleting", "deleting webhook")
+	r.Event(objectInstance, "Normal", "Deleting", "deleting webhook")
 
 	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {
 		logger.Info("Removing finalizer")
@@ -156,12 +155,12 @@ func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context
 	objectInstance.Status = *status
 
 	if err := r.ssaStatus(ctx, objectInstance); err != nil {
-		r.Eventf(objectInstance, nil, "Warning", "ErrorUpdatingStatus", "StatusUpdate",
-			"updating state to %v", string(status.State))
+		r.Event(objectInstance, "Warning", "ErrorUpdatingStatus",
+			fmt.Sprintf("updating state to %v", string(status.State)))
 		return fmt.Errorf("error while updating status %s to: %w", status.State, err)
 	}
 
-	r.Eventf(objectInstance, nil, "Normal", "StatusUpdated", "StatusUpdate", "updating state to %v", string(status.State))
+	r.Event(objectInstance, "Normal", "StatusUpdated", fmt.Sprintf("updating state to %v", string(status.State)))
 	return nil
 }
 
@@ -169,7 +168,7 @@ func (r *RegistryCacheReconciler) setStatusForObjectInstance(ctx context.Context
 func (r *RegistryCacheReconciler) ssaStatus(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
-	if err := r.Status().Patch(ctx, obj, client.Apply, //nolint:staticcheck
+	if err := r.Status().Patch(ctx, obj, client.Apply,
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}}); err != nil {
 		return fmt.Errorf("error while patching status: %w", err)
 	}
@@ -180,22 +179,8 @@ func (r *RegistryCacheReconciler) ssaStatus(ctx context.Context, obj client.Obje
 func (r *RegistryCacheReconciler) ssa(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
-	if err := r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner)); err != nil { //nolint:staticcheck
+	if err := r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner)); err != nil {
 		return fmt.Errorf("error while patching object: %w", err)
 	}
 	return nil
-}
-
-func toUnstructured(scheme *runtime.Scheme, obj client.Object) (*unstructured.Unstructured, error) {
-	m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
-	if err != nil {
-		return nil, err
-	}
-	u := &unstructured.Unstructured{Object: m}
-	gvks, _, err := scheme.ObjectKinds(obj)
-	if err != nil {
-		return nil, err
-	}
-	u.SetGroupVersionKind(gvks[0])
-	return u, nil
 }

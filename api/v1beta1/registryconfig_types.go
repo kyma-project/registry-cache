@@ -155,10 +155,6 @@ type RegistryCacheConfigStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-func init() {
-	SchemeBuilder.Register(&RegistryCacheConfig{}, &RegistryCacheConfigList{})
-}
-
 func (rc *RegistryCacheConfig) RegistryCacheConfiguredUpdateStatusPendingUnknown(reason ConditionReason) {
 	rc.updateStatusPending(ConditionTypeRegistryCacheConfigured, reason, metav1.ConditionUnknown)
 }
@@ -207,8 +203,4 @@ func (rc *RegistryCacheConfig) updateStatusReady(conditionType ConditionType, re
 	}
 
 	meta.SetStatusCondition(&rc.Status.Conditions, condition)
-}
-
-func init() {
-	SchemeBuilder.Register(&RegistryCacheConfig{}, &RegistryCacheConfigList{})
 }

@@ -3,7 +3,7 @@ module github.com/kyma-project/registry-cache
 go 1.27
 
 require (
-	github.com/gardener/gardener-extension-registry-cache v0.23.1
+	github.com/gardener/gardener-extension-registry-cache v0.24.0
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.0

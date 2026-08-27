@@ -95,6 +95,10 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 build: manifests generate fmt vet ## Build manager binary.
 	GOFIPS140=v1.0.0 go build -o bin/manager cmd/main.go
 
+.PHONY: build-for-codeql
+build-for-codeql: ## Build manager binary for CodeQL analysis.
+	go build -o /dev/null ./...
+
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	GODEBUG=fips140=only,tlsmlkem=0 GOFIPS140=v1.0.0 go run ./cmd/main.go

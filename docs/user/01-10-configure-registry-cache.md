@@ -1,6 +1,6 @@
 # Configuring Registry Cache
 
-Create a RegistryCacheConfig custom resource (CR) to enable caching for an upstream container image registry in your SAP BTP, Kyma runtime instance.
+Create a `RegistryCacheConfig` custom resource (CR) to enable caching for an upstream container image registry in your SAP BTP, Kyma runtime instance.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ Create a RegistryCacheConfig custom resource (CR) to enable caching for an upstr
 2. Create a `RegistryCacheConfig` CR.
 
     ```bash
-    kubectl create -f - <<EOF 
+    kubectl create -f - <<EOF
     apiVersion: core.kyma-project.io/v1beta1
     kind: RegistryCacheConfig
     metadata:
@@ -41,7 +41,7 @@ Create a RegistryCacheConfig custom resource (CR) to enable caching for an upstr
 
     You can create multiple `RegistryCacheConfig` resources to cache different upstream registries. Each resource must have a unique name, and each upstream registry must be unique across all resources in the cluster.
 
-3. To verify that KCP processed it successfully, check the resource status.
+3. To verify that KCP processed the resource successfully, check the resource status.
 
     ```bash
     kubectl get registrycacheconfig <name> -n <namespace> -o jsonpath='{.status.state}'
@@ -50,7 +50,7 @@ Create a RegistryCacheConfig custom resource (CR) to enable caching for an upstr
     The expected output values are the following:
     - `Pending` — KCP is processing the configuration.
     - `Ready` — the caching layer has been configured successfully.
-    - `Error` — KCP encountered an issue and is retrying. The state transitions to Ready automatically when processing succeeds.
+    - `Error` — KCP encountered an issue and is retrying. The state transitions to `Ready` automatically when processing succeeds.
 
 ## Related Information
 

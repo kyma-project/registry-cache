@@ -1,6 +1,6 @@
 # RegistryCacheConfig Custom Resource
 
-The `registrycacheconfigs.core.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to configure a caching layer for a specific upstream container image registry. To get the up-to-date CRD and show the output in the `yaml` format, run this command:
+The `registrycacheconfigs.core.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to configure a caching layer for a specific upstream container image registry. To get the up-to-date CRD and show the output in the YAML format, run this command:
 
 ```bash
 kubectl get crd registrycacheconfigs.core.kyma-project.io -o yaml
@@ -8,9 +8,9 @@ kubectl get crd registrycacheconfigs.core.kyma-project.io -o yaml
 
 ## Overview
 
-The user creates a `RegistryCacheConfig` custom resource (CR) to configure a caching layer for one upstream container image registry. Each resource targets a single upstream, for example, `docker.io` or `my-registry.example.com:5000`. Multiple `RegistryCacheConfig` resources can coexist in a cluster, but each upstream must be unique across all namespaces.
+You create a `RegistryCacheConfig` custom resource (CR) to configure a caching layer for one upstream container image registry. Each resource targets a single upstream, for example, `docker.io` or `my-registry.example.com:5000`. Multiple `RegistryCacheConfig` resources can coexist in a cluster, but each upstream must be unique across all namespaces.
 
-The resource is namespace-scoped and can be created in any namespace.
+The resource is namespace-scoped. You can create it in any namespace.
 
 ## Sample Custom Resource
 
@@ -38,9 +38,9 @@ This table lists all the possible parameters of a `RegistryCacheConfig` resource
 |---|:---:|---|---|
 | **metadata.name** | Yes | — | Specifies the name of the CR. |
 | **metadata.namespace** | Yes | — | The namespace in which the CR is created. |
-| **spec.upstream** | Yes | — | The host (and optional port) of the upstream registry to cache. No scheme — for example, `docker.io` or `my-registry.example.com:5000`. Must be DNS-resolvable and unique across all `RegistryCacheConfig` resources in the cluster. |
+| **spec.upstream** | Yes | — | The host (and optional port) of the upstream registry to cache. No scheme - for example, `docker.io` or `my-registry.example.com:5000`. Must be DNS-resolvable and unique across all `RegistryCacheConfig` resources in the cluster. |
 | **spec.remoteURL** | No | `https://<upstream>` | The remote registry URL in `<scheme><host>[:<port>]` format, where `<scheme>` is `https://` or `http://`. If set, used as `proxy.remoteurl` in the registry configuration and as the `server` field in the containerd [`hosts.toml`](https://github.com/containerd/containerd/blob/main/docs/hosts.md#server-field) file. |
-| **spec.secretReferenceName** | No | — | The name of a Kubernetes Secret in the same namespace containing credentials for the upstream registry. The Secret must be immutable and contain exactly the `username` and `password` data keys. |
+| **spec.secretReferenceName** | No | — | The name of a Kubernetes Secret in the same namespace containing credentials for the upstream registry. The Secret must be immutable and contain exactly the `username` and `password` data keys. See [Providing Credentials for a Private Upstream Registry](../02-10-provide-credentials.md). |
 | **spec.volume.size** | No | `10Gi` | The size of the persistent volume for storing cached images. Immutable after creation. |
 | **spec.volume.storageClassName** | No | cluster default | The storage class for the persistent volume. Immutable after creation. |
 | **spec.garbageCollection.ttl** | No | `168h` | The time-to-live for cached images. Images not accessed within this duration are eligible for garbage collection. Set to `0s` to disable. Cannot be re-enabled once disabled. |
@@ -63,7 +63,7 @@ This table lists all the possible parameters of a `RegistryCacheConfig` resource
 | `Ready` | The caching layer has been successfully configured for the upstream registry. |
 | `Failed` | The configuration failed. Check `status.conditions` for the error message. |
 
-## Related Resources and Components
+## Related Components
 
 These components use this CR:
 

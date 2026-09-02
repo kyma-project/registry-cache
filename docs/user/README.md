@@ -6,16 +6,16 @@ The Registry Cache module adds a caching layer for container image registries in
 
 Registry Cache reduces outbound traffic to upstream registries, improving image pull performance. With Registry Cache, you can also cache images from private registries. To do so, provide credentials for the caching layer to use when authenticating against those registries.
 
-The Registry Cache feature is built on top of [Gardener's Registry Cache extension](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/).
+The Registry Cache module is built on top of [Gardener's Registry Cache extension](https://gardener.cloud/docs/extensions/others/gardener-extension-registry-cache/registry-cache/configuration/).
 
 ## Features
 
 The Registry Cache module provides the following features:
 
-- Caches container images from upstream registries to reduce outbound network traffic.
-- Supports private registries using credential Secrets referenced in `RegistryCacheConfig`.
+- Caching container images from upstream registries to reduce outbound network traffic.
+- Support for private registries using credential Secrets referenced in `RegistryCacheConfig`.
 - Configurable cache volume size and storage class per upstream registry.
-- Configurable garbage collection Time to Live (TTL); you can disable garbage collection.
+- Configurable garbage collection time to live (TTL) (you can disable garbage collection).
 - Proxy support for HTTP and HTTPS connections used by the cache.
 - TLS-enabled HTTP server for the Registry Cache endpoint.
 
@@ -25,8 +25,8 @@ The Registry Cache module consists of two main runtime components: the `Registry
 
 ![registry-cache-arch](../assets/registry-cache-arch.drawio.svg)
 
-- `RegistryCache controller` — reconciles `RegistryCache` custom resources (CRs) and drives status transitions.
-- Webhook Server — TLS server on port 9443 that validates `RegistryCacheConfig` resources on create and update.
+- `RegistryCache` controller — reconciles `RegistryCache` custom resources (CRs) and drives status transitions.
+- Webhook Server — TLS server on port 9443 that validates `RegistryCacheConfig` resources on creation and update.
 - Certificate Manager — watches TLS certificate files and rotates the CA bundle in `ValidatingWebhookConfiguration` on renewal.
 
 ## API / Custom Resource Definitions

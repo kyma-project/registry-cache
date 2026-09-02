@@ -1,6 +1,6 @@
-# Providing Credentials for Upstream Repository
+# Providing Credentials for a Private Upstream Registry
 
-Create a Kubernetes Secret and reference it in a RegistryCacheConfig resource to enable Registry Cache to authenticate against a private upstream registry.
+Create a Kubernetes Secret and reference it in a `RegistryCacheConfig` resource to enable Registry Cache to authenticate against a private upstream registry.
 
 ## Context
 

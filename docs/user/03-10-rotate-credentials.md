@@ -32,7 +32,7 @@ Credential Secrets are immutable and you cannot update them in place.
      --type=merge -p '{"spec":{"secretReferenceName":"rc-secret-v2"}}'
    ```
 
-3. When the `RegistryCacheConfig` is in `Ready` state, delete the old Secret.
+3. When the `RegistryCacheConfig` is in `Ready` state, verify that image pulls succeed with the new Secret, and delete the old Secret.
 
    ```bash
    kubectl delete secret rc-secret -n <namespace>

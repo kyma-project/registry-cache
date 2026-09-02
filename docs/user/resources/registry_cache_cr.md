@@ -1,4 +1,4 @@
-# RegistryCache
+# RegistryCache Custom Resource
 
 The `registrycaches.core.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to track the installation state of the Registry Cache module on a Kyma runtime cluster. To get the up-to-date CRD and show the output in the `yaml` format, run this command:
 

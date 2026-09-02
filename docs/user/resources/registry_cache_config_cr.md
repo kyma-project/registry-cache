@@ -1,4 +1,4 @@
-# RegistryCacheConfig
+# RegistryCacheConfig Custom Resource
 
 The `registrycacheconfigs.core.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to configure a caching layer for a specific upstream container image registry. To get the up-to-date CRD and show the output in the `yaml` format, run this command:
 

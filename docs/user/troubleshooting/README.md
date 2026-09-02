@@ -1,6 +1,5 @@
 # Troubleshooting
 
-The webhook validates the Registry Cache configuration before applying it to the cluster, and rejects an invalid configuration.
-If the configuration is valid but the Registry Cache setup fails on the Kyma Control Plane (KCP) side, the `RegistryCacheConfig` resource status transitions to `Error` with an error message in the status conditions. In this case, contact the Kyma support team for assistance.
+Troubleshoot problems related to the Registry Cache module.
 
-For specific issues, see the relevant guides.
+[Registry Cache Does Not Cache Images from Private Registry](01-10-incorrect-credentials.md)

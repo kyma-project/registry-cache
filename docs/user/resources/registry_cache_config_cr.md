@@ -61,7 +61,7 @@ This table lists all the possible parameters of a `RegistryCacheConfig` resource
 |---|---|
 | `Pending` | The resource has been accepted; the Kyma Control Plane is processing the configuration. |
 | `Ready` | The caching layer has been successfully configured for the upstream registry. |
-| `Failed` | The configuration failed. Check `status.conditions` for the error message. |
+| `Error` | KCP encountered an issue and is retrying. The state transitions to `Ready` automatically when processing succeeds. |
 
 ## Related Components
 

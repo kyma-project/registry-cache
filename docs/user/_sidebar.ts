@@ -20,7 +20,7 @@ export default [
     collapsed: true,
     items: [
       {
-        text: 'Registry Cache Does Not Cache Images from Private Registry',
+        text: 'Registry Cache Does Not Cache Images from a Private Registry',
         link: './troubleshooting/01-10-incorrect-credentials.md',
       },
     ],

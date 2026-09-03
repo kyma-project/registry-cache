@@ -33,4 +33,4 @@ The Gardener extension creates the registry cache Pods in `kube-system`. Each Po
    level=error msg="response completed with error" err.code="manifest unknown" err.detail="unknown tag=<tag>" err.message="manifest unknown" ... http.response.status=404
    ```
 
-3. If you see this pattern repeating, verify that the credentials in the Secret referenced by **spec.secretReferenceName** are correct and up to date. To update the credentials, see [Rotating Credentials](../03-10-rotate-credentials.md).
+3. If you see this pattern repeating, verify that the credentials in the Secret referenced by **spec.secretReferenceName** are correct and up to date. To learn how to update the credentials, see [Rotating Credentials](../03-10-rotate-credentials.md).

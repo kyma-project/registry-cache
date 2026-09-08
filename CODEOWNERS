@@ -45,6 +45,5 @@
 *.md @kyma-project/technical-writers
 
 # Design docs and skills do not require technical-writers review
-/docs/contributor/ @kyma-project/Framefrog
 /openspec/ @kyma-project/Framefrog
 /.pi/ @kyma-project/Framefrog

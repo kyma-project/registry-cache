@@ -9,8 +9,33 @@ jobs:
   govuln:
     runs-on: ubuntu-latest
     steps:
-      - name: vulncheck
-        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: go.mod
-          go-package: ./...
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        env:
+          GOOS: ''
+          GOARCH: ''
+      - name: Run govulncheck
+        run: |
+          # Run govulncheck and only fail on vulnerabilities that have a known fix.
+          #
+          # Vulnerabilities with no fixed_version in the JSON output are skipped because they
+          # represent database entries where the upstream fix cannot be expressed as a standard
+          # Go module SEMVER range.  For example, GO-2026-6568 (gardener/gardener) was fixed in
+          # v1.142.6+, but the vuln DB cannot map those patch releases to SEMVER, causing
+          # false-positive reports for all versions >= v1.142.6.  The DB itself acknowledges this:
+          # "If this is causing false-positive reports from vulnerability scanners, please suggest
+          # an edit to the report."  See https://pkg.go.dev/vuln/GO-2026-6568
+          GOVULN_OUT=$(mktemp)
+          govulncheck -format json ./... > "$GOVULN_OUT" 2>&1 || true
+          FIXABLE=$(jq -s '[.[] | select(.finding.fixed_version != null) | .finding.osv] | unique[]' "$GOVULN_OUT" 2>/dev/null | sort -u)
+          rm -f "$GOVULN_OUT"
+          if [ -n "$FIXABLE" ]; then
+            echo "Vulnerabilities with known fixes found:"
+            echo "$FIXABLE"
+            govulncheck ./...
+          fi
+          echo "No vulnerabilities with known fixes found."

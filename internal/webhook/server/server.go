@@ -254,15 +254,24 @@ func (s *DefaultServer) Start(ctx context.Context) error {
 // StartedChecker returns an healthz.Checker which is healthy after the
 // server has been started.
 func (s *DefaultServer) StartedChecker() healthz.Checker {
-	config := &tls.Config{
-		InsecureSkipVerify: true, //nolint:gosec // config is used to connect to our own webhook port.
-	}
 	return func(req *http.Request) error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		if !s.started {
 			return fmt.Errorf("webhook server has not been started yet")
+		}
+
+		certPool := x509.NewCertPool()
+		certBytes, err := os.ReadFile(filepath.Join(s.Options.CertDir, s.Options.CertName))
+		if err != nil {
+			return fmt.Errorf("webhook server is not reachable: reading cert: %w", err)
+		}
+		certPool.AppendCertsFromPEM(certBytes)
+
+		config := &tls.Config{
+			RootCAs:    certPool,
+			MinVersion: tls.VersionTLS12,
 		}
 
 		d := &net.Dialer{Timeout: 10 * time.Second}

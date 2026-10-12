@@ -19,7 +19,8 @@ on:
       - .gitignore
       - "**.md"
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   lint:

@@ -104,11 +104,6 @@ type DefaultServer struct {
 	mu sync.Mutex
 
 	webhookMux *http.ServeMux
-
-	// tlsCfg is the effective TLS configuration used by the listener.
-	// It is set during Start and used by StartedChecker to build a trust pool
-	// without depending on the certificate file path.
-	tlsCfg *tls.Config
 }
 
 // setDefaults does defaulting for the Server.
@@ -222,12 +217,6 @@ func (s *DefaultServer) Start(ctx context.Context) error {
 		cfg.ClientAuth = tls.RequireAndVerifyClientCert
 	}
 
-	// Store the effective TLS config so StartedChecker can obtain the serving
-	// certificate without depending on the certificate file path.
-	s.mu.Lock()
-	s.tlsCfg = cfg
-	s.mu.Unlock()
-
 	listener, err := tls.Listen("tcp", net.JoinHostPort(s.Options.Host, strconv.Itoa(s.Options.Port)), cfg)
 	if err != nil {
 		return err
@@ -262,62 +251,14 @@ func (s *DefaultServer) Start(ctx context.Context) error {
 	return nil
 }
 
-// StartedChecker returns an healthz.Checker which is healthy after the
-// server has been started.
+// StartedChecker returns a healthz.Checker that is healthy once the server has started.
 func (s *DefaultServer) StartedChecker() healthz.Checker {
-	return func(req *http.Request) error {
+	return func(_ *http.Request) error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-
 		if !s.started {
 			return fmt.Errorf("webhook server has not been started yet")
 		}
-
-		// Obtain the current serving certificate via the stored TLS config.
-		// This works regardless of whether the certificate is file-backed or
-		// provided through TLSOpts.GetCertificate.
-		tlsCert, err := s.tlsCfg.GetCertificate(nil)
-		if err != nil {
-			return fmt.Errorf("webhook server health check: failed to get server cert: %w", err)
-		}
-
-		// Parse the leaf certificate so we can add it to the trust pool.
-		leaf := tlsCert.Leaf
-		if leaf == nil {
-			leaf, err = x509.ParseCertificate(tlsCert.Certificate[0])
-			if err != nil {
-				return fmt.Errorf("webhook server health check: failed to parse server cert: %w", err)
-			}
-		}
-
-		certPool := x509.NewCertPool()
-		certPool.AddCert(leaf)
-
-		// When Host is empty (listen on all interfaces) we must still supply a
-		// ServerName so the TLS handshake can verify the certificate.  Dial
-		// "localhost" which is always present in the serving certificate's SANs.
-		dialHost := s.Options.Host
-		serverName := s.Options.Host
-		if dialHost == "" {
-			dialHost = "localhost"
-			serverName = "localhost"
-		}
-
-		config := &tls.Config{
-			RootCAs:    certPool,
-			ServerName: serverName,
-		}
-
-		d := &net.Dialer{Timeout: 10 * time.Second}
-		conn, err := tls.DialWithDialer(d, "tcp", net.JoinHostPort(dialHost, strconv.Itoa(s.Options.Port)), config)
-		if err != nil {
-			return fmt.Errorf("webhook server is not reachable: %w", err)
-		}
-
-		if err := conn.Close(); err != nil {
-			return fmt.Errorf("webhook server is not reachable: closing connection: %w", err)
-		}
-
 		return nil
 	}
 }

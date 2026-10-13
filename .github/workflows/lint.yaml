@@ -19,6 +19,8 @@ on:
       - .gitignore
       - "**.md"
 
+permissions: read-all
+
 jobs:
   lint:
     name: run-linter

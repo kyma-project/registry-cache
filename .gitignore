@@ -34,3 +34,4 @@ dist
 
 # vendored files
 vendor
+.worktrees

@@ -20,7 +20,8 @@ on:
       - "**.md"
 
 permissions:
-  contents: read
+  contents: read-all
+
 
 jobs:
   lint:

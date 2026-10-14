@@ -6,7 +6,7 @@ on:
     - cron: "0 5 * * *"
 
 permissions:
-  contents: read
+  contents: read-all
 
 jobs:
   daily-markdown-link-check:
